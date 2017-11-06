@@ -1,0 +1,2 @@
+resharper_version: "2016.2.20160913.100041"
+resharper_link: "https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.{{ resharper_version }}.zip"

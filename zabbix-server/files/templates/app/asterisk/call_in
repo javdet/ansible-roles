@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Net::Telnet;
+
+my ($t, $data, $i, $chan);
+my %param;
+$chan = $ARGV[0];
+unless ($chan) {
+    exit;
+}
+	
+$t = new Net::Telnet (Timeout => 2, Port => 5038, Errmode => 'return');
+$t->open("127.0.0.1");
+$t->print("Action: login");
+$t->print("Events: off");
+$t->print("Username: manager");
+$t->print("Secret: contact");
+$t->print("");
+$t->waitfor('/Message: Authentication accepted/');
+    
+$t->print("Action: Status");
+$t->print("");
+    
+$i = 0;
+    
+while (my $out = $t->getline) {
+    if ($out eq "Event: Status\n") {
+	$param{'status'} = '';
+	$param{'chan'} = '';
+	while ((my $line = $t->getline) ne "\n") {
+	    $param{'status'} = 'up' if $line =~ /^ChannelStateDesc: Up/;
+	    $param{'chan'} = $chan  if $line =~ /^Channel: SIP\/$chan/;
+	    $param{'context'} = 'ccq'  if $line =~ /^Context: ccq/;
+	}
+	if (($param{'chan'} eq $chan) && ($param{'status'} eq 'up') && ($param{'context'} eq 'ccq')) {
+	    $i++;
+	}
+    }
+}
+print $i;
+

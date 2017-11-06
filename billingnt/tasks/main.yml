@@ -1,0 +1,11 @@
+- name: Develop environment
+  include: develop.yml
+  when: env == "dev"
+
+- name: Test environment
+  include: test.yml
+  when: env == "test"
+
+- name: Daily environment
+  include: daily.yml
+  when: env == "daily"

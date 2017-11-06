@@ -1,0 +1,2 @@
+[macro-on_call]
+exten => s,1,System(curl http://isterika.me/app/api/calls/asterisk?token=${TOKEN}&from=${CALLERID(num)}&to=${CONNECTEDLINE(num)})

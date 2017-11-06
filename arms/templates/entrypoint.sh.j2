@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+php /var/www/html/bin/console assets:install {{ assets_params }}
+php /var/www/html/bin/console assetic:dump
+php /var/www/html/bin/console cache:clear --no-warmup
+
+chmod -R {{ file_chmod }} /var/www/html/var/cache /var/www/html/var/logs
+chown -R www-data:www-data /var/www/html/var/cache && chown -R www-data:www-data /var/www/html/var/logs
+
+exec php-fpm

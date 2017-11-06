@@ -1,0 +1,96 @@
+---
+
+- include_vars: vault.yml
+
+- name: First deploy
+  include: new.yml
+  when: first_deploy == "yes"
+
+- name: Copy asterisk configs
+  become: yes
+  template:
+    src: asterisk/{{ item }}.j2
+    dest: /etc/asterisk/{{ item }}
+  with_items:
+    - sip.conf
+    - queues.conf
+    - extensions.ael
+    - extensions.conf
+    - extconfig.conf
+    - http.conf
+    - modules.conf
+    - manager.conf
+
+- name: Copy odbc configs
+  become: yes
+  template:
+    src: odbc/{{ item }}.j2
+    dest: /etc/{{ item }}
+  with_items:
+    - odbc.ini
+    - odbcinst.ini
+
+- name: Install NPM
+  become: yes
+  yum:
+    name: npm
+    state: present
+
+- name: Install wscat
+  become: yes
+  npm:
+    name: wscat
+    global: yes
+
+- name: set timezone to Europe/Moscow
+  become: yes
+  timezone:
+    name: Europe/Moscow
+
+- name: Copy cron
+  become: yes
+  copy:
+    src: cron.asterisk
+    dest: /etc/cron.d/99asterisk
+
+- name: Copy firewall script into place
+  become: yes
+  template:
+    src: firewall.sh.j2
+    dest: /etc/firewall.sh
+    owner: root
+    group: root
+    mode: 0744
+
+- name: Copy firewall systemd unit file into place (for systemd systems)
+  become: yes
+  template:
+    src: firewall.unit.j2
+    dest: /etc/systemd/system/firewall.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Configure the firewall service
+  become: yes
+  service:
+    name: firewall
+    state: started
+    enabled: true
+
+- name: Firewall restart
+  become: yes
+  service:
+    name: firewall
+    state: restarted
+
+- name: Get voice message
+  become: yes
+  get_url:
+    url: "{{ url_voice_message }}"
+    dest: /var/lib/asterisk/sounds/hysterics.wav
+    mode: 0644
+
+- name: Reload Asterisk
+  become: yes
+  command: /usr/sbin/asterisk -rx 'core reload'

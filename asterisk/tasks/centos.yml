@@ -1,0 +1,46 @@
+- name: Install epel and libselinux
+  become: yes
+  yum: 
+    pkg: "{{ item }}"
+    state: installed
+  with_items:
+    - epel-release
+    - libselinux-python
+
+- name: Install asterisk pre-requisites via yum
+  become: yes
+  yum: 
+    pkg: "{{ item }}"
+    state: installed
+  with_items:
+    - bzip2
+    - cpp
+    - gcc 
+    - gcc-c++ 
+    - git
+    - gtk2-devel
+    - jansson-devel
+    - kernel-devel 
+    - kernel-headers
+    - libtool-ltdl-devel 
+    - libxml2 
+    - libxml2-devel 
+    - libuuid-devel
+    - libtool
+    - libuuid-devel 
+    - libsrtp-devel
+    - libiodbc-devel
+    - make 
+    - mysql-connector-odbc
+    - ncurses 
+    - ncurses-devel
+    - newt-devel 
+    - net-snmp-devel
+    - openssl-devel 
+    - sqlite 
+    - sqlite-devel 
+    - spandsp-devel
+    - svn
+    - unixODBC-devel
+    - uuid-devel
+  

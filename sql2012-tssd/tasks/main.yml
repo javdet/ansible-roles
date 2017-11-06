@@ -1,0 +1,8 @@
+- name: Download SQL Server 2012 Transact-SQL ScriptDom
+  win_get_url:
+    url: "{{ sql2012_tssd_link }}"
+    dest: C:\distr\DACFramework.msi
+
+- name: Install SQL Server 2012 Transact-SQL ScriptDom
+  win_msi:
+    path: C:\distr\DACFramework.msi

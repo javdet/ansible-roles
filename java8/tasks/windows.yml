@@ -1,0 +1,4 @@
+- name: Install Java
+  win_chocolatey: 
+    name: jre8 
+    version: "{{ java_version }}"

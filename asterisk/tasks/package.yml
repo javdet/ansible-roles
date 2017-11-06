@@ -1,0 +1,11 @@
+---
+  - name: Update and install Asterisk
+    apt: name={{ item }} update_cache=yes
+    with_items:
+      - asterisk
+      - asterisk-core-sounds-ru
+      - asterisk-mysql
+
+  - name: Asterisk boot enabled
+    service: name=asterisk enabled=yes
+     

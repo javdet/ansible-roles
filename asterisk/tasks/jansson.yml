@@ -1,0 +1,25 @@
+---
+
+  - name: Make temp jansson dir
+    become: yes
+    file: "path=/tmp/jansson state=directory"
+
+  - name: download jansson
+    become: yes
+    get_url: 
+      url: http://www.digip.org/jansson/releases/jansson-{{ jansson_version }}.tar.gz
+      dest: /tmp/jansson-2.9.tar.gz
+
+  - name: unzip jansson
+    become: yes
+    unarchive: src=/tmp/jansson-{{ jansson_version }}.tar.gz dest=/tmp/jansson copy=no
+
+  - name: Build jansson from tarball
+    become: yes
+    command: "{{ item }} chdir=/tmp/jansson/jansson-{{ jansson_version }}"
+    with_items:
+      - ./configure --prefix=/usr
+      - make clean
+      - make
+      - make install
+      - ldconfig

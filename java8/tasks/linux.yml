@@ -1,0 +1,19 @@
+- name: Add java repo
+  become: yes
+  apt_repository: 
+    repo: "{{ apt_java_repo }}"
+    state: present 
+    update_cache: yes
+
+- name: Install Java
+  become: yes
+  apt: 
+    name: "{{ apt_java_package }}" 
+    state: present 
+    update_cache: yes 
+    default_release: jessie-backports
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+
+- name: Configure ca-certificates-java
+  become: yes
+  command: /var/lib/dpkg/info/ca-certificates-java.postinst configure

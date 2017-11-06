@@ -1,0 +1,17 @@
+- name: Install Composer
+  become: yes
+  get_url: 
+    url: "{{ composer_url }}"
+    dest: "{{ composer_install_dir }}/composer.phar"
+
+- name: rename - composer.phar -> composer
+  become: yes
+  command: mv {{ composer_install_dir }}/composer.phar {{ composer_install_dir }}/composer 
+
+- name: check permissions
+  become: yes
+  file: 
+    path: "{{ composer_install_dir }}/composer" 
+    owner: root 
+    group: root 
+    mode: 0755

@@ -1,0 +1,18 @@
+- include_vars: vault.yml
+
+- name: Install the mysql packages in Centos derivatives
+  include: centos.yml
+  when: ansible_distribution == 'CentOS'
+
+- name: Install the mysql packages in Debian/Ubuntu derivatives
+  include: centos.yml
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Configure database for service Asterisk 
+  include: asterisk.yml
+  when: service_name == 'asterisk'
+
+- name: Configure database for service Zabbix 
+  include: zabbix.yml
+  when: service_name == 'zabbix'
+    

@@ -1,0 +1,64 @@
+- name: Get task number from branch
+  set_fact: task={{ branch | regex_replace('^(.*)/DIRI(.*)$', '\\2') }}
+
+- name: Remove nginx directory
+  file:
+    path: /home/{{ host_user }}/{{ inventory_hostname }}/nginx/conf.d/{{ task }}
+    state: absent
+
+- name: Get host balancer container name
+  command: docker ps --filter "name={{ strip_hostname }}_balancer" -q
+  register: balancer_container
+  ignore_errors: true
+
+- name: Balancer reload
+  command: docker exec {{ balancer_container.stdout }} nginx -s reload
+
+- name: Get image name
+  shell: docker ps --filter "name={{ task }}.{{ project_name }}.upstream" --format \{\{.Image\}\}
+  register: upstream_image
+
+- name: Down docker compose
+  docker_service:
+    project_name: "{{ task }}"
+    project_src: /home/{{ user }}/{{ task }}/{{ project_name }}
+    state: absent
+
+- name: Remove work directory
+  become: yes
+  file:
+    path: /home/{{ user }}/{{ task }}
+    state: absent
+
+- name: Remove image
+  command: docker rmi {{ upstream_image.stdout }}
+  ignore_errors: true
+
+- name: Set repo, image name and tag
+  set_fact:
+    upstream_repo_name: "{{ upstream_image.stdout | regex_replace('^(.*)/(.*):(.*)$', '\\1') }}"
+    upstream_image_name: "{{ upstream_image.stdout | regex_replace('^(.*)/(.*):(.*)$', '\\2') }}"
+    upstream_tag_name: "{{ upstream_image.stdout | regex_replace('^(.*)/(.*):(.*)$', '\\3') }}"
+
+- name: Get Docker-Content-Digest
+  shell: 'curl -k -v --silent -H "Accept: application/vnd.docker.distribution.manifest.v2+json" 
+    -X GET https://{{ upstream_repo_name }}/v2/{{ upstream_image_name }}/manifests/{{ upstream_tag_name }} 
+    | grep Docker-Content-Digest | awk "{print ($3)}"'
+  register: docker_content_digest
+  ignore_errors: true
+
+- name: Remove image from registry
+  shell: curl -X DELETE https://{{ upstream_repo_name }}/v2/{{ upstream_image_name }}/manifests/{{ docker_content_digest }}
+  ignore_errors: true
+
+- name: Удаление старых образов
+  shell: 'docker rmi $(docker images --quiet --filter "dangling=true")'
+  ignore_errors: true
+
+- name: Удаление старых volume
+  shell: 'docker volume rm $(docker volume ls --quiet --filter "dangling=true")'
+  ignore_errors: true
+
+- name: Remove all unused networks
+  shell: 'docker network prune -f'
+  ignore_errors: true

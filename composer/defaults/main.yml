@@ -1,0 +1,4 @@
+os_type: "linux"
+composer_version: "1.2.0"
+composer_url: "https://getcomposer.org/download/{{ composer_version }}/composer.phar"
+composer_install_dir: /usr/local/bin

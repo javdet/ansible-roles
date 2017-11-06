@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# No spoofing.
+if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]
+then
+for filter in /proc/sys/net/ipv4/conf/*/rp_filter
+do
+echo 1 > $filter
+done
+fi
+
+# Completely reset the firewall by removing all rules and chains.
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -t nat -F
+iptables -t mangle -F
+iptables -F
+iptables -X
+
+#Запрещающие политики по умолчанию
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
+# Accept traffic from loopback interface (localhost).
+iptables -A INPUT -i lo -j ACCEPT
+
+# Защита от частой долбежки sip пакетами
+iptables -A INPUT -p udp -m udp --dport 5060 -m recent --set --name SIP --rsource
+iptables -A INPUT -p udp -m udp --dport 5060 -m recent --update --seconds 1 --hitcount 10 --name SIP --rsource -j DROP
+
+# Разрешить доступ из внутренних сетей холдинга:
+iptables -A INPUT -i eth0 -s any -m conntrack --ctstate NEW -j ACCEPT
+
+#Разрешить icmp запросы  (эхо-запрос, т.е. ping)
+iptables -A INPUT -p icmp -j ACCEPT
+
+#Разрешить уже существующее соединение
+iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+#Разрешить rtp трафик UDP
+iptables -A INPUT -p udp -m udp --dport 6000:20000 -j ACCEPT
+iptables -A INPUT -p tcp -m tcp --dport 6000:20000 -j ACCEPT
+
+# Allow NTP traffic for time synchronization.
+iptables -A OUTPUT -p udp --dport 123 -j ACCEPT
+iptables -A INPUT -p udp --sport 123 -j ACCEPT
+
+# Open ports.
+{# Add a rule for each open port #}
+{% for port in firewall_allowed_tcp_ports %}
+iptables -A INPUT -p tcp -m tcp --dport {{ port }} -j ACCEPT
+{% endfor %}
+{% for port in firewall_allowed_udp_ports %}
+iptables -A INPUT -p udp -m udp --dport {{ port }} -j ACCEPT
+{% endfor %}
+
+iptables -A INPUT -s {{ firewall_partial_allowed_tcp_ports.ami.network }} -p tcp -m tcp --dport {{ firewall_partial_allowed_tcp_ports.ami.port }} -j ACCEPT
+iptables -A INPUT -s {{ firewall_partial_allowed_udp_ports.ami.network }} -p udp -m udp --dport {{ firewall_partial_allowed_udp_ports.ami.port }} -j ACCEPT
+
+# Drop useragent
+{% for useragent in firewall_dropped_useragent %}
+iptables -I INPUT -p udp --dport 5060 -m string --string "{{ useragent }}" --algo bm -j DROP
+{% endfor %}

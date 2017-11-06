@@ -1,0 +1,43 @@
+version: '2'
+services:
+  {{ component_name }}.balancer:
+    image: {{ docker_repo }}/base/nginx:1.10-alpine
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: '{{ component_name }}.balancer'
+  
+  {{ component_name }}.upstream:
+    volumes:
+      - /var/www/html
+      - "/home/{{ host_user }}/{{ project_name }}/{{ component_name }}/migrations-db.php:/var/www/migrations-db.php:rw"
+    environment:
+      - SERVICE_80_NAME=vats-sync
+      - DEBUG=1
+      - MONOLOG_LOGFILE=php://stdout
+      - MONOLOG_LEVEL=DEBUG
+      - DB_URL=postgresql://{{ db_user }}:{{ db_pass }}@{{ db_address }}:{{ db_port }}/{{ db_name }}
+      - VTE_WSDL={{ cordis_vte_wsdl }}
+      - VTE_LOGIN={{ cordis_vte_login }}
+      - VTE_PASSWORD={{ cordis_vte_password }}
+      - SOAP_SERVICE_NAME=VatsSyncrhronizer
+      - SOAP_TARGET_NAMESPACE=http://{{ site.sync }}/
+      - SOAP_URI=http://{{ site.sync }}/
+      - VATS_SIP_DOMAIN={{ public_sip_domain }}
+      - FS_URL=http://{{ site.fs }}/
+      - DB_DRIVER=pdo_pgsql
+      - DB_HOST={{ db_address }}
+      - DB_USER={{ db_user }}
+      - DB_PASSWORD={{ db_pass }}
+      - DB_SCHEMA={{ db_name }}
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: '{{ component_name }}.upstream'
+    
+networks:
+  default:
+    external:
+      name: {{ strip_hostname }}_default

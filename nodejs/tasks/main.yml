@@ -1,0 +1,14 @@
+- name: Add nodejs repo
+  become: yes
+  shell: curl -sL https://deb.nodesource.com/setup_{{ nodejs_version }}.x | sudo -E bash -
+
+- name: Install nodejs
+  become: yes
+  apt: 
+    name: nodejs 
+    update_cache: yes 
+    state: installed 
+    force: yes
+
+- name: Install npm-cache
+  command: npm install -g npm-cache

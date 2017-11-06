@@ -1,0 +1,12 @@
+task: XXX-XXX
+user: ansible
+host_user: deployer
+base_host: 
+repository:
+  arms: ""
+components:
+  - arms
+project_repo: BC
+scale_count: "2"
+upstream_container_default: "{{ project_name }}_{{ component_name }}.upstream_1"
+balancer_container_default: "{{ project_name }}_{{ component_name }}.balancer_1"

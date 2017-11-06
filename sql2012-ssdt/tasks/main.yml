@@ -1,0 +1,4 @@
+- name: Install SQL Server Data Tools 2012
+  win_chocolatey:
+    name: sqlserverdatatools2012 
+    version: "{{ sql2012_ssdt_version }}"

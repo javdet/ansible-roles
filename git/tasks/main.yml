@@ -1,0 +1,7 @@
+- name: Install Git for Linux
+  include: linux.yml
+  when: ansible_system == "Linux"
+
+- name: Install Git for Windows
+  include: windows.yml
+  when: ansible_system == "Win32NT"

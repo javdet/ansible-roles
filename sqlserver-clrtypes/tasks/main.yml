@@ -1,0 +1,7 @@
+- name: Install Microsoft SQL Server System CLR Types
+  win_chocolatey: 
+    name: "{{ item.0 }}"
+    version: "{{ item.1 }}"
+  with_together:
+    - "{{ clrtypes_package }}"
+    - "{{ clrtypes_version }}"

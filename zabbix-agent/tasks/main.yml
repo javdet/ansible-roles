@@ -1,0 +1,14 @@
+---
+
+  - name: Install zabbix-agent for Debian
+    include: "debian.yml"
+    when: os_type == "debian"
+
+  - name: Install zabbix-agent for CentOS
+    include: "centos.yml"
+    when: os_type == "centos"
+
+  - name: Copy config
+    become: yes
+    template: src=zabbix_agentd.conf dest=/etc/zabbix/zabbix_agentd.conf
+    notify: restart zabbix-agent

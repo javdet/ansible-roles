@@ -1,0 +1,144 @@
+- name: Get task number from branch
+  set_fact: task={{ branch | regex_replace('^(.*)/DIRI(.*)$', '\\2') }}
+
+- include: check.yml
+
+- name: Create work directory
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ user }}"
+    group: www
+  with_items:
+    - /home/{{ user }}
+    - /home/{{ user }}/{{ task }}
+    - /home/{{ user }}/{{ task }}/{{ project_name }}
+    - /home/{{ user }}/{{ task }}/{{ project_name }}/nginx
+
+- name: Add permission for clone repo
+  become: yes
+  file:
+    path: /home/{{ user }}/{{ task }}/{{ project_name }}
+    mode: 0775
+
+- name: Check existing repo dir
+  stat:
+    path: /home/{{ user }}/{{ task }}/{{ project_name }}/{{ component_name }}
+  register: p
+
+- name: Clone git repo
+  git:
+    repo: "{{ repository[component_name] }}"
+    dest: /home/{{ user }}/{{ task }}/{{ project_name }}/{{ component_name }}
+    accept_hostkey: yes
+    clone: yes
+    force: yes
+    version: develop
+  when: not p.stat.exists
+
+- name: Checkout branch
+  git:
+    repo: "{{ repository[component_name] }}"
+    dest: /home/{{ user }}/{{ task }}/{{ project_name }}/{{ component_name }}
+    clone: no
+    force: yes
+    version: "{{ branch }}"
+
+- name: Copy container nginx config
+  become: yes
+  template:
+    src: nginx.conf.j2
+    dest: /home/{{ user }}/{{ task }}/{{ project_name }}/nginx/nginx.conf
+
+- name: Install dependencies
+  become: yes
+  composer:
+    command: install
+    prefer_dist: yes
+    no_dev: no
+    ignore_platform_reqs: yes
+    working_dir: /home/{{ user }}/{{ task }}/{{ project_name }}/{{ component_name }}
+
+- name: assets install
+  become: yes
+  command: php bin/console assets:install {{ assets_params }}
+  args:
+    chdir: /home/{{ user }}/{{ task }}/{{ project_name }}/{{ component_name }}
+
+- name: assetic dump
+  become: yes
+  command: php bin/console assetic:dump
+  args:
+    chdir: /home/{{ user }}/{{ task }}/{{ project_name }}/{{ component_name }}
+
+- name: cache clear
+  become: yes
+  command: php bin/console cache:clear --no-warmup
+  args:
+    chdir: /home/{{ user }}/{{ task }}/{{ project_name }}/{{ component_name }}
+
+- name: Set owner for repo dirs
+  become: yes
+  file:
+    path: /home/{{ user }}/{{ task }}/{{ project_name }}/{{ component_name }}
+    recurse: yes
+    owner: "{{ user }}"
+    group: www
+
+- name: Flush permission for clone repo
+  become: yes
+  file:
+    path: /home/{{ user }}/{{ task }}/{{ project_name }}
+    mode: 0755
+
+- name: Copy entrypoint
+  become: yes
+  template: 
+    src: entrypoint.{{ env }}.sh.j2
+    dest: /home/{{ user }}/{{ task }}/{{ project_name }}/{{ component_name }}/entrypoint.sh
+    mode: 0755
+
+- name: Copy docker-compose file
+  become: yes
+  template:
+    src: docker-compose.yml.j2
+    dest: /home/{{ user }}/{{ task }}/{{ project_name }}/docker-compose.yml
+
+- name: Copy docker-compose override file
+  become: yes
+  template:
+    src: docker-compose.{{ env }}.yml.j2
+    dest: /home/{{ user }}/{{ task }}/{{ project_name }}/docker-compose.{{ env }}.yml
+
+- name: Run docker compose
+  docker_service:
+    project_name: "{{ task }}"
+    files:
+      - /home/{{ user }}/{{ task }}/{{ project_name }}/docker-compose.yml
+      - /home/{{ user }}/{{ task }}/{{ project_name }}/docker-compose.{{ env }}.yml
+    project_src: /home/{{ user }}/{{ task }}/{{ project_name }}
+    state: present
+
+- name: Create nginx directory
+  file: 
+    path: /home/{{ host_user }}/{{ inventory_hostname }}/nginx/conf.d/{{ task }}
+    state: directory
+
+- name: Copy nginx config 
+  template:
+    src: nginx_{{ component_name }}.conf.j2
+    dest: /home/{{ host_user }}/{{ inventory_hostname }}/nginx/conf.d/{{ task }}/{{ component_name }}.conf
+
+- name: Get host balancer container name
+  command: docker ps --filter "name={{ strip_hostname }}_balancer" -q
+  register: balancer_container
+  ignore_errors: true
+
+- name: Balancer reload
+  command: docker exec {{ balancer_container.stdout }} nginx -s reload
+
+- name: Write to branch file
+  lineinfile:
+    dest: /home/{{ host_user }}/{{ inventory_hostname }}/branches
+    line: '{{ branch }},{{ project_repo }},{{ component_name }},{{ user }},{{ project_name }}'

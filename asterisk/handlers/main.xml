@@ -1,0 +1,5 @@
+- name: restart asterisk
+  become: yes
+  service: 
+    name: asterisk 
+    state: restarted

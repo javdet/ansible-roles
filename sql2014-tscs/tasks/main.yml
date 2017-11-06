@@ -1,0 +1,8 @@
+- name: Download SQL Server 2014 Transact-SQL Compiler Service
+  win_get_url:
+    url: "{{ sql2014_tscs_link }}"
+    dest: C:\distr\sqlls14.msi
+
+- name: Install SQL Server 2014 Transact-SQL Compiler Service
+  win_msi:
+    path: C:\distr\sqlls14.msi

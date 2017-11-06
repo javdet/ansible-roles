@@ -1,0 +1,13 @@
+---
+
+  - name: Configure the PostgreSQL APT key
+    apt_key: url=https://www.postgresql.org/media/keys/ACCC4CF8.asc state=present
+
+  - name: Add repo
+    apt_repository: repo="deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main 9.5"
+
+  - name: Install postgress
+    apt: name=postgresql-9.5 state=present
+
+  - name: Install python-psycopg2
+    apt: name=python-psycopg2 state=present

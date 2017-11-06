@@ -1,0 +1,8 @@
+- name: Download SQL Server 2014 Express LocalDB
+  win_get_url:
+    url: "{{ sql2014_localdb_link }}"
+    dest: C:\distr\SqlLocalDB.msi
+
+- name: Install SQL Server 2014 Express LocalDB
+  win_msi:
+    path: C:\distr\SqlLocalDB.msi

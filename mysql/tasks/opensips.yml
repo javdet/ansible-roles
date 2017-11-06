@@ -1,0 +1,9 @@
+---
+
+  - name: Create the database Opensips
+    mysql_db: name={{ item }} state=present
+    with_items: "{{ mysql_db_opensips }}"
+
+  - name: Create the database user Opensips
+    mysql_user: name={{ item.name }} password={{ item.pass|default("foobar") }} priv={{ item.priv|default("*.*:ALL") }} state=present host={{ item.host | default("l
+    with_items: "{{ mysql_user_opensips }}"

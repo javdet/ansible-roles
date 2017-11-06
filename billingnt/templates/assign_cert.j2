@@ -1,0 +1,4 @@
+{% for item in site %}
+$binding = Get-WebBinding -Name {{ task }}-{{ item }}.{{ env }}.{{ base_host }} -Protocol "https"
+$binding.AddSslCertificate("{{ certificate }}", "My")
+{% endfor %}

@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>3.0</version>
+    <date>2017-04-08T09:02:03Z</date>
+    <groups>
+        <group>
+            <name>Templates</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <template>Check types avilable</template>
+            <name>Check types avilable</name>
+            <description>Шаблон проверки доступности всех типов получения данных. Включает в себя доступность zabbix-agent, snmp, ipmi, jmx&#13;
+&#13;
+Иногда при отключении мониторинга какого-либо типа в состоянии &quot;Недоступно&quot; внутренняя проверка зависает в этом состоянии. &#13;
+В таком случае необходимо сделать следующее:&#13;
+1) Указать для данного типа адреес хоста, который доступен для данного типа проверок&#13;
+2) Временно повесить на данный хост проверку соответствующего типа&#13;
+3) Дождаться пока состояние внутренней проверки перейдёт в &quot;Доступно&quot;&#13;
+4) Удалить временный элемент данных&#13;
+5) Удалить добавленный адрес из настроек хоста.</description>
+            <groups>
+                <group>
+                    <name>Templates</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>zabbix</name>
+                </application>
+            </applications>
+            <items>
+                <item>
+                    <name>Доступность zabbix-agent</name>
+                    <type>5</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>zabbix[host,agent,available]</key>
+                    <delay>60</delay>
+                    <history>1</history>
+                    <trends>90</trends>
+                    <status>0</status>
+                    <value_type>3</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <delta>0</delta>
+                    <snmpv3_contextname/>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description>Контролирует доступность хоста при опросе с помощью zabbix-agent&#13;
+&#13;
+Возможные значения:&#13;
+0 - недоступен&#13;
+1 - доступен&#13;
+2 - неизвестно.</description>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>zabbix</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                    <logtimefmt/>
+                </item>
+                <item>
+                    <name>Доступность ipmi</name>
+                    <type>5</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>zabbix[host,ipmi,available]</key>
+                    <delay>60</delay>
+                    <history>1</history>
+                    <trends>90</trends>
+                    <status>0</status>
+                    <value_type>3</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <delta>0</delta>
+                    <snmpv3_contextname/>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description>Контролирует доступность хоста при опросе с помощью ipmi&#13;
+&#13;
+Возможные значения:&#13;
+0 - недоступен&#13;
+1 - доступен&#13;
+2 - неизвестно.</description>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>zabbix</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                    <logtimefmt/>
+                </item>
+                <item>
+                    <name>Доступность jmx</name>
+                    <type>5</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>zabbix[host,jmx,available]</key>
+                    <delay>60</delay>
+                    <history>1</history>
+                    <trends>90</trends>
+                    <status>0</status>
+                    <value_type>3</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <delta>0</delta>
+                    <snmpv3_contextname/>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description>Контролирует доступность хоста при опросе с помощью jmx&#13;
+&#13;
+Возможные значения:&#13;
+0 - недоступен&#13;
+1 - доступен&#13;
+2 - неизвестно.</description>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>zabbix</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                    <logtimefmt/>
+                </item>
+                <item>
+                    <name>Доступность snmp</name>
+                    <type>5</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>zabbix[host,snmp,available]</key>
+                    <delay>60</delay>
+                    <history>1</history>
+                    <trends>90</trends>
+                    <status>0</status>
+                    <value_type>3</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <delta>0</delta>
+                    <snmpv3_contextname/>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description>Контролирует доступность хоста при опросе с помощью snmp&#13;
+&#13;
+Возможные значения:&#13;
+0 - недоступен&#13;
+1 - доступен&#13;
+2 - неизвестно.</description>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>zabbix</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                    <logtimefmt/>
+                </item>
+            </items>
+            <discovery_rules/>
+            <macros/>
+            <templates/>
+            <screens/>
+        </template>
+    </templates>
+    <triggers>
+        <trigger>
+            <expression>{Check types avilable:zabbix[host,ipmi,available].last()}=0</expression>
+            <name>ipmi недоступен на {HOST.NAME}</name>
+            <url/>
+            <status>0</status>
+            <priority>3</priority>
+            <description>Триггер указывает, что опрос хоста по ipmi перешёл в состояние &quot;недоступен&quot;</description>
+            <type>0</type>
+            <dependencies/>
+        </trigger>
+        <trigger>
+            <expression>{Check types avilable:zabbix[host,jmx,available].last()}=0</expression>
+            <name>jmx недоступен на {HOST.NAME}</name>
+            <url/>
+            <status>0</status>
+            <priority>3</priority>
+            <description>Триггер указывает, что опрос хоста по jmx перешёл в состояние &quot;недоступен&quot;</description>
+            <type>0</type>
+            <dependencies/>
+        </trigger>
+        <trigger>
+            <expression>{Check types avilable:zabbix[host,snmp,available].last()}=0</expression>
+            <name>snmp недоступен на {HOST.NAME}</name>
+            <url/>
+            <status>0</status>
+            <priority>3</priority>
+            <description>Триггер указывает, что опрос хоста по snmp перешёл в состояние &quot;недоступен&quot;</description>
+            <type>0</type>
+            <dependencies/>
+        </trigger>
+        <trigger>
+            <expression>{Check types avilable:zabbix[host,agent,available].last()}=0</expression>
+            <name>Zabbix-agent недоступен на {HOST.NAME}</name>
+            <url/>
+            <status>0</status>
+            <priority>3</priority>
+            <description>Триггер указывает, что опрос хоста при помощи zabbix-agent перешёл в состояние &quot;недоступен&quot;</description>
+            <type>0</type>
+            <dependencies/>
+        </trigger>
+    </triggers>
+</zabbix_export>

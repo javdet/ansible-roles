@@ -1,0 +1,16 @@
+task: XXX-XXX
+user: ansible
+host_user: deployer
+repository:
+  api: ""
+  sync: ""
+  fs: ""
+components:
+  - api
+  - sync
+  - fs
+project_repo: VATS
+build: no
+scale_count: "2"
+upstream_container_default: "{{ project_name }}_{{ component_name }}.upstream_1"
+balancer_container_default: "{{ project_name }}_{{ component_name }}.balancer_1"

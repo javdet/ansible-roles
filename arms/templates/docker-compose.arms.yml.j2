@@ -1,0 +1,26 @@
+version: '2'
+services:
+  {{ component_name }}.balancer:
+    image: {{ docker_repo }}/base/nginx:1.10-alpine
+    depends_on:
+      - {{ component_name }}.upstream
+    volumes_from:
+      - {{ component_name }}.upstream:ro
+    restart: always
+    volumes:
+      - "./nginx/nginx.conf:/etc/nginx/nginx.conf:ro"
+
+  {{ component_name }}.upstream:
+    image: "{{ upstream_image }}"
+    depends_on:
+      - {{ component_name }}.memcached
+    restart: always
+    expose:
+      - "9000"
+    entrypoint: /var/www/html/entrypoint.sh
+    extra_hosts:
+      - "mysql:{{ db_address }}"
+
+  {{ component_name }}.memcached:
+    image: memcached:alpine
+    restart: always

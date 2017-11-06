@@ -1,0 +1,37 @@
+globals {
+    TOKEN=ykdnTBQc46;
+}
+
+context default {
+    _X. => 	Hangup;
+}
+
+//----------------------internal calls---------------------------------//
+context from-internal {
+
+    _X. => {
+		Dial(SIP/78126027003/${EXTEN},60);
+		Hangup;
+	    }
+
+    _1XX =>	Dial(SIP/O_O${EXTEN});
+
+}
+
+context from-trunk {
+
+    _X. => {
+	    Verbose(1, Caller ${CALLERID(All)} has entered the queue);
+	    Answer();
+	    Wait(1);
+	    Playback(hysterics);
+            SET(FILENAME=out_${STRFTIME(${EPOCH},,%H_%M_%S)}_${CALLERID(num)}_${EXTEN}.wav);
+            SET(MONITOR_FILENAME=${STRFTIME(${EPOCH},,%Y)}/${STRFTIME(${EPOCH},,%Y-%m)}/${STRFTIME(${EPOCH},,%Y-%m-%d)}/${FILENAME});
+            Set(CDR(filename)=${FILENAME});
+            Mixmonitor(${MONITOR_FILENAME});
+	    System(curl http://isterika.me/app/api/calls/asterisk?token=${TOKEN}&from=${CALLERID(num)}&to=${EXTEN});
+	    Queue(001,t);
+	    Hangup;
+	}
+}
+

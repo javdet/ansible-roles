@@ -1,0 +1,80 @@
+- name: Get task number from branch
+  set_fact: task={{ branch | regex_replace('^(.*)/DIRI(.*)$', '\\2') }}
+
+- name: Build container
+  include: build.yml
+  when: build == "yes"
+
+- name: Create work directory
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ host_user }}"
+    group: www
+  with_items:
+    - /home/{{ host_user }}
+    - /home/{{ host_user }}/{{ task }}
+    - /home/{{ host_user }}/{{ task }}/{{ project_name }}
+    - /home/{{ host_user }}/{{ task }}/{{ project_name }}/nginx
+
+- name: Down previous docker containers
+  docker_service:
+    project_name: "{{ task }}"
+    files:
+      - /home/{{ host_user }}/{{ task }}/{{ project_name }}//docker-compose.yml
+      - /home/{{ host_user }}/{{ task }}/{{ project_name }}//docker-compose.{{ env }}.yml
+    project_src: /home/{{ host_user }}/{{ task }}/{{ project_name }}
+    state: absent
+    remove_images: all
+  ignore_errors: true
+
+- name: Copy container nginx config
+  become: yes
+  template:
+    src: nginx.conf.j2
+    dest: /home/{{ host_user }}/{{ task }}/{{ project_name }}/nginx/nginx.conf
+
+- name: Copy docker-compose file
+  become: yes
+  template:
+    src: docker-compose.yml.j2
+    dest: /home/{{ host_user }}/{{ task }}/{{ project_name }}/docker-compose.yml
+
+- name: Copy docker-compose override file
+  become: yes
+  template:
+    src: docker-compose.{{ env }}.yml.j2
+    dest: /home/{{ host_user }}/{{ task }}/{{ project_name }}/docker-compose.{{ env }}.yml
+
+- name: Run docker compose
+  docker_service:
+    project_name: "{{ task }}"
+    files:
+      - /home/{{ host_user }}/{{ task }}/{{ project_name }}//docker-compose.yml
+      - /home/{{ host_user }}/{{ task }}/{{ project_name }}//docker-compose.{{ env }}.yml
+    project_src: /home/{{ host_user }}/{{ task }}/{{ project_name }}
+    state: present
+
+- name: Create nginx directory
+  file: 
+    path: /home/{{ host_user }}/{{ inventory_hostname }}/nginx/conf.d/{{ task }}
+    state: directory
+
+- name: Copy nginx config 
+  template:
+    src: nginx_{{ component_name }}.conf.j2
+    dest: /home/{{ host_user }}/{{ inventory_hostname }}/nginx/conf.d/{{ task }}/{{ component_name }}.conf
+
+- name: Get host balancer container name
+  command: docker ps --filter "name={{ strip_hostname }}_balancer" -q
+  register: balancer_container
+  ignore_errors: true
+
+- name: Balancer reload
+  command: docker exec {{ balancer_container.stdout }} nginx -s reload
+
+- name: Write to branch file
+  lineinfile:
+    dest: /home/{{ host_user }}/{{ inventory_hostname }}/branches
+    line: '{{ branch }},{{ project_repo }},{{ component_name }},{{ host_user }},{{ project_name }}'

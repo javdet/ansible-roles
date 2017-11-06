@@ -1,0 +1,17 @@
+---
+
+- name: Install dependencies for CenoOS
+  become: true
+  yum:
+    name: '{{ item }}'
+    state: installed
+    update_cache: yes
+  with_items:
+    - yum-utils
+
+- name: Add docker repository
+  yum_repository:
+    name: docker
+    description: docker YUM repo
+    baseurl: https://download.docker.com/linux/centos/docker-ce.repo
+    enabled: yes

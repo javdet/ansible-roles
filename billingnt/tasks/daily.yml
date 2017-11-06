@@ -1,0 +1,125 @@
+- name: Get branch name
+  set_fact: task=daily
+
+- name: Create components directory
+  win_file:
+    path: D:\www\{{ item }}
+    state: directory
+  with_items:
+    - "{{ components }}"
+
+- name: Create IIS apppools
+  win_iis_webapppool:
+    name: "{{ task }}-{{ item }}.test.{{ base_host }}"
+    state: started
+  with_items:
+    - "{{ components }}"
+
+- name: Create IIS websites
+  win_iis_website:
+    name: "{{ task }}-{{ item }}.test.{{ base_host }}"
+    application_pool: "{{ task }}-{{ item }}.test.{{ base_host }}"
+    port: 80
+    hostname: "{{ task }}-{{ item }}.test.{{ base_host }}"
+    physical_path: D:\www\{{ item }}
+    state: started
+  with_items:
+    - "{{ site }}"
+
+- name: Binding IIS websites on https
+  win_iis_webbinding:
+    name: "{{ task }}-{{ item }}.test.{{ base_host }}"
+    protocol: https
+    port: 443
+    host_header: "{{ task }}-{{ item }}.test.{{ base_host }}"
+    state: present
+  with_items:
+    - "{{ site }}"
+
+- name: Copy script for Assign Certificate
+  win_template:
+    src: "assign_cert.{{ env }}.j2"
+    dest: D:\www\assign_cert_{{ host_user }}.ps1
+
+- name: Enable SNI
+  raw: "powershell.exe -command \"Set-WebBinding -name {{ task }}-{{ item }}.test.{{ base_host }} -BindingInformation '*:443:{{ task }}-{{ item }}.test.{{ base_host }}' -PropertyName SslFlags -Value 1\""
+  with_items:
+    - "{{ site }}"
+
+- name: Assign Certificate
+  win_shell: D:\www\assign_cert_{{ host_user }}.ps1
+
+- name: Delete script for Assign Certificate
+  win_file:
+    path: D:\www\assign_cert_{{ host_user }}.ps1
+    state: absent
+
+- name: Binding IIS websites by ftp
+  win_iis_webbinding:
+    name: "{{ task }}-{{ item }}.test.{{ base_host }}"
+    port: 21
+    protocol: ftp
+    state: present
+    host_header: "{{ task }}-{{ item }}.test.{{ base_host }}"
+  with_items:
+    - "{{ site }}"
+
+- name: Copy IIS config script
+  win_copy:
+    src: "SetupSiteForPublish.ps1"
+    dest: D:\www\SetupSiteForPublish.ps1
+
+- name: Copy Resources file
+  win_copy:
+    src: "Resources.psd1"
+    dest: D:\www\Resources.psd1
+
+- name: Add permission for MSDeploy user CI 
+  win_shell: D:\www\SetupSiteForPublish.ps1 -siteName {{ task }}-{{ item }}.test.{{ base_host }} -deploymentUserName CORP\{{ publish_user }} -publishSettingSavePath D:\www\{{ item }} -publishSettingFileName {{ publish_user }}-{{ item }}.PublishSettings
+  with_items:
+    - "{{ site }}"
+  ignore_errors: yes
+
+- name: Create inventory subapp in svc
+  win_iis_webapplication:
+    name: inventory
+    state: present
+    site: "{{ task }}-svc.test.{{ base_host }}"
+    application_pool: "{{ task }}-inventory.test.{{ base_host }}"
+    physical_path: D:\www\inventory
+
+- name: Create stu subapp in ris
+  win_iis_webapplication:
+    name: stu
+    state: present
+    site: "{{ task }}-ris.test.{{ base_host }}"
+    application_pool: "{{ task }}-stu.test.{{ base_host }}"
+    physical_path: D:\www\stu
+
+- name: Delete IIS config script
+  win_file:
+    path: D:\www\SetupSiteForPublish.ps1
+    state: absent
+
+- name: Delete Resources file
+  win_file:
+    path: D:\www\Resources.psd1
+    state: absent
+
+- name: Add read permission on code folders
+  win_acl:
+    path: D:\www\{{ item }}
+    user: Everyone
+    rights: Read,ListDirectory,ExecuteFile
+    type: allow
+    state: present
+    inherit: ContainerInherit, ObjectInherit
+    propagation: 'None'
+  with_items:
+    - "{{ components }}"
+
+- name: Create list sites
+  template:
+    src: list_sites.{{ env }}.j2
+    dest: ./list_sites
+  delegate_to: localhost

@@ -1,0 +1,7 @@
+- name: Check existing component dir
+  win_stat:
+    path: C:\Users\{{ user }}\{{ task }}
+  register: p
+
+- meta: end_play
+  when: p is defined and p.stat.isdir

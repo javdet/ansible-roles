@@ -1,0 +1,28 @@
+- name: Set current containers name
+  set_fact:
+    upstream_container_current: "{{ upstream_container_default }}"
+    balancer_container_current: "{{ balancer_container_default }}"
+
+- name: Copy container nginx config
+  template:
+    src: nginx.{{ component_name }}.conf.j2
+    dest: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/nginx/nginx.conf
+
+- name: Run docker compose
+  docker_service:
+    project_name: "{{ project_name }}"
+    project_src: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}
+    files:
+      - /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/docker-compose.yml
+      - /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/docker-compose.{{ env }}.yml
+    state: present
+
+- name: Check running balancer
+  command: docker ps --filter "name={{ component_name }}.balancer" --format \{\{.Names\}\}
+  register: balancer_container
+  until: balancer_container.stdout != ""
+  retries: 5
+  delay: 5
+
+- debug:
+    var: balancer_container

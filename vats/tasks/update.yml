@@ -1,0 +1,54 @@
+- name: Check current running balancer
+  command: docker ps --filter "name={{ component_name }}.balancer" --format \{\{.Names\}\}
+  register: balancer_container
+
+- name: Set current containers name
+  set_fact:
+    balancer_container_current: "{{ balancer_container.stdout }}"
+    upstream_container_current: "{{ upstream_container.stdout }}"
+
+- name: Scale upstream
+  command: docker-compose -p {{ project_name }} -f docker-compose.yml -f docker-compose.{{ env }}.yml scale {{ component_name }}.upstream={{ scale_count }}
+  args:
+    chdir: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/
+
+- name: Check new running upstream
+  command: docker ps --filter "name={{ component_name }}.upstream" --filter "since={{ upstream_container.stdout }}" --format \{\{.Names\}\}
+  register: upstream_container_new
+  until: upstream_container_new.stdout != ""
+  retries: 5
+  delay: 5
+  ignore_errors: yes
+
+- debug: 
+    var: upstream_container_new
+
+- name: Set current containers name
+  set_fact:
+    upstream_container_current: "{{ upstream_container_new.stdout }}"
+
+- name: Copy container nginx config
+  template:
+    src: nginx.{{ component_name }}.conf.j2
+    dest: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/nginx/nginx.conf
+
+- name: Scale upstream
+  command: docker-compose -p {{ project_name }} -f docker-compose.yml -f docker-compose.{{ env }}.yml scale {{ component_name }}.balancer={{ scale_count }}
+  args:
+    chdir: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/
+
+- name: Check new running balancer
+  command: docker ps --filter "name={{ component_name }}.balancer" --filter "since={{ balancer_container.stdout }}" --format \{\{.Names\}\}
+  register: balancer_container_new
+  until: balancer_container_new.stdout != ""
+  retries: 5
+  delay: 5
+  ignore_errors: yes
+
+- debug: 
+    var: balancer_container_new
+
+- name: Set current containers name
+  set_fact:
+    balancer_container_current: "{{ balancer_container_new.stdout }}"
+

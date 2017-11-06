@@ -1,0 +1,30 @@
+- name: Install software
+  become: yes
+  yum: 
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - epel-release
+    - libselinux-python
+    - mc
+    - telnet
+    - mlocate
+    - tcpdump
+    - ntpdate
+    - python2-pip
+    - curl
+    - iptables
+    - screen
+    - wget
+    - whois
+    - bind-utils
+    - git
+    - zip
+    - unzip
+    - iotop
+    - sysstat
+
+- name: Disable SELinux
+  become: yes
+  selinux:
+    state: disabled

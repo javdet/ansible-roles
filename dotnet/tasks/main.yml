@@ -1,0 +1,7 @@
+- name: Microsoft .NET Framework SDK
+  win_chocolatey:
+    name: "{{ item.0 }}"
+    version: "{{ item.1 }}"
+  with_together:
+    - "{{ dotnet_package }}"
+    - "{{ dotnet_version }}"

@@ -1,0 +1,10 @@
+---
+
+  - name: Install postgres for Debian
+    include: debian.yml
+    when: os_type == 'debian'
+
+  - name: Install postgres for CentOS
+    include: centos.yml
+    when: os_type == 'centos'
+

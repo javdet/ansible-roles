@@ -1,0 +1,59 @@
+---
+  - name: Install dependencies
+    apt: name={{ item }} update_cache=yes state=installed
+    with_items:
+      - autoconf
+      - automake
+      - build-essential
+      - git
+      - lame
+      - libsrtp0-dev
+      - libspandsp-dev
+      - libmyodbc
+      - libmysqlclient-dev
+      - libgtk2.0-dev
+      - libxml2-dev
+      - libncurses5-dev
+      - libnewt-dev 
+      - libsqlite3-dev 
+      - libjansson-dev
+      - openssl
+      - pkg-config 
+      - sqlite3 
+      - subversion
+      - uuid-dev 
+      - unixodbc-dev
+
+  - include: pjsip.yml
+  - include: jansson.yml
+
+  - name: Download source code
+    git: repo=http://gerrit.asterisk.org/asterisk dest=/usr/src/asterisk version={{ asterisk_version }}
+
+  - name: Install mp3 tones
+    command: /usr/src/asterisk/contrib/scripts/get_mp3_source.sh
+
+  - name: Build Asterisk
+    command: "{{ item }} chdir=/usr/src/asterisk"
+    with_items:
+      - ./configure
+      - make
+      - make install
+      - make samples
+      - make config
+      - ldconfig
+
+  - name: Create group
+    group: name=asterisk state=present
+
+  - name: Create user
+    user: name=asterisk comment='Asterisk process user' shell=/sbin/nologin group=asterisk
+     
+  - name: Set ownership on important directories for the asterisk user
+    file: path="{{ item.path }}" owner=asterisk group=asterisk recurse=yes
+    with_items:
+      - { path: '/usr/lib/asterisk/' }
+      - { path: '/var/lib/asterisk/' }
+      - { path: '/var/spool/asterisk/' }
+      - { path: '/var/log/asterisk/' }
+      - { path: '/var/run/asterisk/' }

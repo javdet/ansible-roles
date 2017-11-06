@@ -1,0 +1,27 @@
+---
+
+- include: "debian.yml"
+  when: ansible_os_family == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- include: "centos.yml"
+  when: ansible_os_family == 'CentOS' or ansible_os_family == 'RedHat'
+
+- name: ensure docker-py module is installed
+  become: yes
+  pip:
+    name: "{{ item }}"
+  with_items: 
+    - docker
+    - docker-compose
+  
+- name: ensure config folder is present
+  file:
+    path: /etc/docker
+    state: directory
+
+- name: ensure starts on system boot
+  become: yes
+  service:
+    name: docker
+    enabled: yes
+  notify: restart docker

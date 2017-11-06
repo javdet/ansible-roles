@@ -1,0 +1,5 @@
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+0       3       *       *       *       root    systemctl restart asterisk
+10       3      *       *       *       root    systemctl start asterisk 

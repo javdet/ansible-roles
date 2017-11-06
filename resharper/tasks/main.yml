@@ -1,0 +1,9 @@
+- name: Download Resharper
+  win_get_url:
+    url: "{{ resharper_link }}"
+    dest: C:\distr\JetBrains.ReSharper.CommandLineTools.{{ resharper_version }}.zip
+
+- name: Install Resharper
+  win_unzip: 
+    src: C:\distr\JetBrains.ReSharper.CommandLineTools.{{ resharper_version }}.zip
+    dest: C:\Program Files\ReSharper CLT

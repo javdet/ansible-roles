@@ -1,0 +1,49 @@
+- name: Build container
+  include: build.yml
+  when: build == "yes"
+
+- name: Create work directory
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /home/{{ host_user }}/{{ task }}/{{ project_name }}
+    - /home/{{ host_user }}/{{ task }}/{{ project_name }}/{{ component_name }}
+    - /home/{{ host_user }}/{{ task }}/{{ project_name }}/{{ component_name }}/nginx
+
+- name: Copy container nginx config
+  become: yes
+  template:
+    src: nginx.conf.j2
+    dest: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/nginx/nginx.conf
+
+- name: Copy docker-compose files
+  become: yes
+  template:
+    src: docker-compose.yml.j2
+    dest: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/docker-compose.yml
+
+- name: Run docker compose
+  docker_service:
+    project_name: "{{ component_name }}"
+    project_src: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}
+    state: present
+
+- name: Create nginx directory
+  file: 
+    path: /home/{{ host_user }}/{{ inventory_hostname }}/nginx/conf.d/{{ project_name }}
+    state: directory
+
+- name: Copy nginx config 
+  template:
+    src: nginx_{{ component_name }}.conf.j2
+    dest: /home/{{ host_user }}/{{ inventory_hostname }}/nginx/conf.d/{{ project_name }}/{{ component_name }}.conf
+
+- name: Get host balancer container name
+  command: docker ps --filter "name={{ strip_hostname }}_balancer" -q
+  register: balancer_container
+  ignore_errors: true
+
+- name: Balancer reload
+  command: docker exec {{ balancer_container.stdout }} nginx -s reload

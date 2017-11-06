@@ -1,0 +1,45 @@
+- name: Download bamboo-agent
+  get_url: 
+    url: https://{{ bamboo_server }}/agentServer/agentInstaller/atlassian-bamboo-agent-installer-{{ agent_version }}.jar
+    dest: "{{ agent_installer_dir }}"
+
+- name: Create bamboo-agent home directory
+  become: yes
+  file: 
+    path: "{{ agent_dir }}"
+    owner: "{{ agent_user }}" 
+    state: directory
+
+- name: Create bamboo-agent version directory
+  become: yes
+  file: 
+    path: "{{ agent_dir }}/{{ agent_version }}"
+    owner: "{{ agent_user }}"
+    state: directory
+
+- name: Install bamboo-agent
+  shell: "java -Dbamboo.home={{ agent_dir }}/{{ agent_version }} -Dbamboo.agent.ignoreServerCertName=true -jar {{ agent_installer_dir }} https://{{ bamboo_server }}/agentServer/ install"
+  ignore_errors: true
+
+- name: Copy template init script
+  become: yes
+  template: 
+    src: "bamboo-agent.j2" 
+    dest: "/etc/init.d/bamboo-agent" 
+    owner: "root" 
+    group: "root" 
+    mode: "0755"
+
+- name: Enable bamboo-agent
+  become: yes
+  command: systemctl enable bamboo-agent 
+
+- name: Copy bamboo-capabilities
+  become: yes
+  template:
+      src: "bamboo-capabilities.j2"
+      dest: "{{ agent_dir }}/{{ agent_version }}/bin/bamboo-capabilities.properties"
+      owner: "{{ agent_user }}"
+      group: "root"
+      mode: "0644"
+  notify: restart bamboo-agent

@@ -1,0 +1,6 @@
+{% for item in site %}
+{{ item }}={{ task }}-{{ item }}.{{ env }}.{{ base_host }}
+{% endfor %}
+publish_user={{ publish_user }}
+publish_pass={{ publish_pass }}
+host={{ netbios_name }}

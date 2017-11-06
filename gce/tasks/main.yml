@@ -1,0 +1,7 @@
+- name: Create VM
+  include: create.yml
+  when: action == "create"
+
+- name: Remove VM
+  include: remove.yml
+  when: action == "remove"

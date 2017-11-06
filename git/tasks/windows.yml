@@ -1,0 +1,4 @@
+- name: Install Git
+  win_chocolatey:
+    name: git
+    version: "{{ git_version }}"

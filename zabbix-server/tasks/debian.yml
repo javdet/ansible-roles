@@ -1,0 +1,16 @@
+---
+
+  - name: Install deb repo
+    apt_repository: repo="deb http://repo.zabbix.com/zabbix/3.0/debian jessie main" state=present
+
+  - name: Install deb-src repo
+    apt_repository: repo="deb-src http://repo.zabbix.com/zabbix/3.0/debian jessie main" state=present
+
+  - name: Install gpg key
+    apt_key: id=79EA5ED4 url=http://repo.zabbix.com/zabbix-official-repo.key
+
+  - name: Install zabbix-server
+    apt: name={{ item }} update_cache=yes
+    with_items:
+      - zabbix-server-{{ database }}
+      - zabbix-frontend-php

@@ -1,0 +1,32 @@
+version: '2'
+services:
+  {{ component_name }}.balancer:
+    image: {{ docker_repo }}/base/nginx:1.10-alpine
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: '{{ component_name }}.balancer'
+  
+  {{ component_name }}.upstream:
+    volumes:
+      - /var/www/html
+      - /mnt/freeswitch/conf:/var/www/storage:rw
+    environment:
+      - SERVICE_80_NAME=vats-fs
+      - DEBUG=1
+      - MONOLOG_LOGFILE=php://stdout
+      - MONOLOG_LEVEL=DEBUG
+      - DB_URL=postgresql://{{ db_user }}:{{ db_pass }}@{{ db_address }}:{{ db_port }}/{{ db_name }}
+      - VATS_SIP_DOMAIN={{ public_sip_domain }}
+      - RELOAD_CONFIG_COMMAND=../storage/fs_cli -H {{ private_sip_domain }} -x 'reloadxml'
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: '{{ component_name }}.upstream'
+
+networks:
+  default:
+    external:
+      name: {{ strip_hostname }}_default

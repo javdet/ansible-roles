@@ -1,0 +1,29 @@
+---
+
+service_name: zabbix
+os_type: centos
+
+pgsql_db_asterisk: asterisk
+pgsql_db_freeswitch: freeswitch
+pgsql_db_opensips: opensips
+pgsql_db_zabbix: zabbix
+
+pgsql_user_asterisk:
+     - name: asterisk
+       pass: CIZ3u2wUGc
+       priv: "*.*:ALL"
+
+pgsql_user_freeswitch:
+     - name: freeswitch
+       pass: gvtbHY4P08
+       priv: "*.*:ALL"
+
+pgsql_user_opensips:
+     - name: opensips
+       pass: Riha5k734P
+       priv: "*.*:ALL"
+
+pgsql_user_zabbix:
+     - name: zabbix
+       pass: K484yGYfYy
+       priv: "*.*:ALL"

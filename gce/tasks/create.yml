@@ -1,0 +1,24 @@
+- name: Launch instances
+  gce:
+    instance_names: '{{ domain | regex_replace("(\.)","-") }}'
+    zone: europe-west1-c
+    machine_type: "{{ machine_type }}"
+    image: "{{ image }}"
+    service_account_email: "{{ service_account_email }}"
+    credentials_file: "{{ credentials_file }}"
+    project_id: "{{ project_id }}"
+    tags: "{{ tag }}"
+  register: gce
+
+- name: Wait for SSH to come up
+  wait_for: 
+    host: "{{ item.public_ip }}"
+    port: 22 
+    delay: 3 
+    timeout: 60 
+    state: started
+  with_items: "{{ gce.instance_data }}"
+
+- name: Add host to groupname
+  add_host: hostname={{ item.public_ip }} groupname=new_instances
+  with_items: "{{ gce.instance_data }}"

@@ -1,0 +1,109 @@
+- name: Create work directories
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /logger/elasticsearch/storage
+    - /logger/logstash/pipeline
+    - /logger/kibana
+    - /logger/nginx
+
+- name: Copy configs
+  become: yes
+  copy:
+    src: "{{ item }}/{{ item }}.yml"
+    dest: /logger/{{ item }}/{{ item }}.yml
+  with_items:
+    - elasticsearch
+    - kibana
+
+- name: Copy logstash config
+  become: yes
+  copy:
+    src: logstash/logstash.general.yml
+    dest: /logger/logstash/logstash.yml
+
+- name: Copy logstash pipeline
+  become: yes
+  copy:
+    src: logstash/logstash.yml
+    dest: /logger/logstash/pipeline/logstash.yml
+
+- name: Copy Dockerfiles
+  become: yes
+  copy: 
+    src: "{{ item }}"
+    dest: /logger/{{ item }}
+  with_items:
+    - elasticsearch/Dockerfile
+    - kibana/Dockerfile
+    - logstash/Dockerfile
+
+- name: Enable udp in rsyslog
+  become: yes
+  lineinfile:
+    path: /etc/rsyslog.conf
+    regexp: '^#module\(load="imudp"\)'
+    line: 'module(load="imudp")'
+
+- name: Enable tcp in rsyslog
+  become: yes
+  lineinfile:
+    path: /etc/rsyslog.conf
+    regexp: '^#module\(load="imtcp"\)'
+    line: 'module(load="imtcp")'
+
+- name: Enable udp port in rsyslog
+  become: yes
+  lineinfile:
+    path: /etc/rsyslog.conf
+    regexp: '^#input\(type="imudp" port="514"\)'
+    line: 'input(type="imudp" port="514")'
+
+- name: Enable tcp port in rsyslog
+  become: yes
+  lineinfile:
+    path: /etc/rsyslog.conf
+    regexp: '^#input\(type="imtcp" port="514"\)'
+    line: 'input(type="imtcp" port="514")'
+  
+- name: Copy Rsyslog configs
+  become: yes
+  copy:
+    src: rsyslog/{{ item }}
+    dest: /etc/rsyslog.d/{{ item }}
+  with_items:
+    - 01-json-template.conf
+    - 60-output.conf
+  notify: restart rsyslog
+
+- name: Copy docker-compose config
+  become: yes
+  template:
+    src: docker-compose.yml.j2
+    dest: /logger/docker-compose.yml
+
+- name: Copy nginx config
+  become: yes
+  template:
+    src: nginx.conf.j2
+    dest: /logger/nginx/kibana.conf
+
+- name: Pull docker compose
+  become: yes
+  command: docker-compose pull
+  args:
+    chdir: /logger/
+
+- name: Run docker compose
+  become: yes
+  command: docker-compose up -d
+  args:
+    chdir: /logger/
+
+- name: set timezone to Europe/Moscow
+  become: yes
+  timezone:
+    name: Europe/Moscow
+

@@ -1,0 +1,8 @@
+- name: Download SQL Server 2012 Data-Tier Application Framework
+  win_get_url:
+    url: "{{ sql2012_sqldom_link }}"
+    dest: "C:\\distr\\sqldom.msi"
+
+- name: Install SQL Server 2012 Data-Tier Application Framework
+  win_msi:
+    path: "C:\\distr\\sqldom.msi"

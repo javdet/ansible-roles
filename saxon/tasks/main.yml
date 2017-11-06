@@ -1,0 +1,9 @@
+- name: Download Saxon HE
+  win_get_url:
+    url: "{{ saxon_link }}"
+    dest: C:\distr\SaxonHE{{ saxon_version }}.zip
+
+- name: Install SaxonHE
+  win_unzip:
+    src: C:\distr\SaxonHE{{ saxon_version }}.zip
+    dest: C:\Program Files\Saxon HE 9.7.0.12J

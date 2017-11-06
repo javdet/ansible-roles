@@ -1,0 +1,28 @@
+- name: install fail2ban for Debian
+  become: yes
+  apt: 
+    pkg: fail2ban 
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: install fail2ban for Centos
+  become: yes
+  yum: 
+    name: fail2ban 
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: configure fail2ban local jails
+  become: yes
+  copy: 
+    src: 99-asterisk.conf 
+    dest: /etc/fail2ban/jail.d/99-asterisk.conf 
+    mode: 0644
+  notify: restart fail2ban
+
+- name: start/stop fail2ban service
+  become: yes
+  service: 
+    name: fail2ban 
+    state: started
+    enabled: yes

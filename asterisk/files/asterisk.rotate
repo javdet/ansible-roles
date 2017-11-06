@@ -1,0 +1,9 @@
+/var/log/asterisk/messages /var/log/asterisk/full /var/log/asterisk/*log {
+    missingok
+    rotate 14
+    daily
+    create 0640 asterisk asterisk
+    postrotate
+    /usr/sbin/asterisk -rx 'logger reload' > /dev/null 2> /dev/null
+    endscript
+}

@@ -1,0 +1,17 @@
+- name: restart asterisk
+  become: yes
+  service: 
+    name: asterisk 
+    state: restarted
+
+- name: restart mysql
+  become: yes
+  service: 
+    name: mysql 
+    state: restarted
+
+- name: restart firewall
+  become: yes
+  service: 
+    name: firewall 
+    state: restarted

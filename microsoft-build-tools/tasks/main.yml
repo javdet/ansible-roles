@@ -1,0 +1,14 @@
+- name: Install Microsoft Build Tools
+  win_chocolatey: 
+    name: microsoft-build-tools 
+    version: "{{ item }}"
+    force: True
+  with_items:
+     - "{{ microsoft_build_tools_version }}"
+  ignore_errors: true
+
+# From https://github.com/pdonald/nuget-webtargets
+- name: Copy Web.targets files
+  win_copy:
+    src: v14.0
+    dest: C:\Program Files (x86)\MSBuild\Microsoft\VisualStudio

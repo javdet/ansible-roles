@@ -1,0 +1,64 @@
+- name: Clone git repo
+  git:
+    repo: "{{ repository[component_name] }}"
+    dest: ../{{ component_name }}
+    accept_hostkey: yes
+    clone: yes
+    force: yes
+    version: "{{ branch }}"
+  delegate_to: localhost
+
+- name: Check git branch if exist
+  shell: git log -1 --pretty=format:"%H"
+  args:
+    chdir: ../{{ component_name }}
+  register: commit
+  delegate_to: localhost
+
+- name: Copy Dockerfile 
+  copy:
+    src: Dockerfile.{{ component_name }}
+    dest: ../{{ component_name }}/Dockerfile
+  delegate_to: localhost
+
+- name: Install dependencies
+  composer:
+    command: install
+    prefer_dist: yes
+    ignore_platform_reqs: yes
+    optimize_autoloader: yes
+    no_dev: yes
+    working_dir: ../{{ component_name }}
+  delegate_to: localhost
+
+- name: Build an image and push it to repo
+  docker_image:
+    path: ../{{ component_name }}
+    name: "{{ docker_repo }}/{{ project_name }}/{{ component_name }}"
+    tag: "{{ commit.stdout }}"
+    push: yes
+  delegate_to: localhost
+
+- name: Remove image
+  docker_image:
+    state: absent
+    name: "{{ docker_repo }}/{{ component_name }}/upstream"
+    tag: "{{ commit.stdout }}"
+  delegate_to: localhost
+
+- name: Create list commits
+  template:
+    src: list_commits.j2
+    dest: ./list_commits
+  delegate_to: localhost
+
+- name: Edit list commits
+  lineinfile:
+    dest: ./list_commits
+    regexp: 'tag_{{ item }}='
+    line: 'tag_{{ item }}={{ commit.stdout }}'
+  with_items:
+    - "{{ components }}"
+  delegate_to: localhost
+
+- meta: end_play

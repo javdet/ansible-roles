@@ -1,0 +1,20 @@
+- name: gce
+  gce:
+    instance_names: '{{ domain | regex_replace("(\.)","-") }}'
+    zone: "{{ zone }}"
+    machine_type: "{{ machine_type }}"
+    image: "{{ image }}"
+    service_account_email: "{{ service_account_email }}"
+    credentials_file: "{{ credentials_file }}"
+    project_id: "{{ project_id }}"
+    tags: "{{ tag }}"
+  register: gce
+
+- name: Destroy
+  gce:
+    instance_names: '{{ domain | regex_replace("(\.)","-") }}'
+    service_account_email: "{{ service_account_email }}"
+    credentials_file: "{{ credentials_file }}"
+    project_id: "{{ project_id }}"
+    zone: "{{ zone }}"
+    state: absent

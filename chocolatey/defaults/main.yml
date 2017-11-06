@@ -1,0 +1,3 @@
+apt_cache_valid_time: 600
+apt_java_repo: "deb http://ftp.uk.debian.org/debian {{ansible_lsb.codename}}-backports main"
+apt_java_package: "openjdk-8-jre"

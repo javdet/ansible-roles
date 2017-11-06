@@ -1,0 +1,8 @@
+---
+
+  - name: restart bamboo-agent
+    command: /etc/init.d/bamboo-agent start
+
+  - name: restart docker
+    become: yes
+    service: name="docker" enabled=yes state="restarted"

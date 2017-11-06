@@ -1,0 +1,16 @@
+version: '2'
+services:
+  {{ component_name }}.balancer:
+    depends_on:
+      - {{ component_name }}.upstream
+    volumes_from:
+      - {{ component_name }}.upstream:ro
+    restart: always
+    volumes:
+      - "./nginx/nginx.conf:/etc/nginx/nginx.conf:ro"
+
+  {{ component_name }}.upstream:
+    image: "{{ upstream_image }}"
+    restart: always
+    expose:
+      - "9000"

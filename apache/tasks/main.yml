@@ -1,0 +1,10 @@
+---
+# tasks file for apache
+  - name: Install apache
+    yum: name=httpd state=present
+
+  - name: Remove standard welcome page
+    file: path=/etc/httpd/conf.d/welcome.conf state=absent
+
+  - name: Ensure apache is running
+    service: name=httpd state=started enabled=yes

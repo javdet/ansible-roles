@@ -1,0 +1,38 @@
+---
+
+  - name: Create the database Zabbix
+    become: yes
+    mysql_db:
+      name: "{{ item }}" 
+      login_user: root
+      login_password: "{{ mysql_root_db_pass }}"
+      state: present
+    with_items: "{{ mysql_db_zabbix }}"
+
+  - name: Create the database user Zabbix
+    become: yes
+    mysql_user: 
+      name: "{{ item.name }}" 
+      password: "{{ item.pass }}"
+      priv: "{{ item.priv }}"
+      state: present 
+      host: localhost
+      login_user: root
+      login_password: "{{ mysql_root_db_pass }}"
+    with_items: "{{ mysql_user_zabbix }}"
+
+  - name: Unpack sqldump
+    become: yes
+    unarchive: 
+      src: /usr/share/doc/zabbix-server-mysql/create.sql.gz 
+      dest=: usr/share/doc/zabbix-server-mysql 
+      copy: no
+
+  - name: Import sqldump zabbix
+    become: yes
+    mysql_db: 
+      name: zabbix 
+      state: import
+      login_user: root
+      login_password: "{{ mysql_root_db_pass }}"
+      target: /usr/share/doc/zabbix-server-mysql/create.sql

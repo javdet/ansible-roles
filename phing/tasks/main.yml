@@ -1,0 +1,5 @@
+- name: Install phing
+  become: yes
+  apt: 
+    name: phing 
+    state: present

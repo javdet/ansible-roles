@@ -1,0 +1,18 @@
+---
+
+  - name: Install postgres
+    become: yes
+    yum: name={{item}} state=present
+    with_items:
+      - python-psycopg2
+      - postgresql
+      - postgresql-server
+
+  - name: initdb
+    become: yes
+    command: postgresql-setup initdb
+
+  - name: Enabled
+    become: yes
+    service: name=postgresql state=restarted enabled=yes
+

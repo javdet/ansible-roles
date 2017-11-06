@@ -1,0 +1,29 @@
+version: '2'
+services:
+  {{ component_name }}.balancer:
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: '{{ component_name }}.balancer'
+
+  {{ component_name }}.upstream:
+    volumes:
+      - /var/www/html
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: '{{ component_name }}.upstream'
+
+  {{ component_name }}.memcached:
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: '{{ component_name }}.memcached'
+
+networks:
+  default:
+    external:
+      name: {{ strip_hostname }}_default

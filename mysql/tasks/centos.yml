@@ -1,0 +1,55 @@
+- name: Download and add the repository
+  become: yes
+  yum: 
+    name: "{{ mysql_repo }}"
+    state: present 
+    validate_certs: False
+    update_cache: yes
+
+- name: Install the mysql packages in Centos
+  become: yes
+  yum: name={{ item }} state=installed
+  with_items:
+    - libselinux-python
+    - mysql-community-server
+    - mysql-community-client
+    - MySQL-python
+
+- name: Copy password capture script
+  become: yes
+  copy:
+    src: extract-password.sh
+    dest: /tmp/extract-password.sh
+    mode: 0555
+
+- name: Copy password alter script
+  become: yes
+  template:
+    src: change-password.sh.j2
+    dest: /tmp/change-password.sh
+    mode: 0555
+
+- name: Start the mysql services
+  become: yes
+  service: 
+    name: mysqld
+    state: started
+    enabled: yes
+
+- name: Capture mysql root password
+  become: yes
+  shell: /tmp/extract-password.sh
+  register: password
+
+- debug:
+    msg: "Password = {{ password.stdout }}"
+
+- name: Update mysql root password for localhost
+  become: yes
+  command: "/tmp/change-password.sh {{ password.stdout }}"
+
+- name: copy .my.cnf file with root password credentials
+  template: 
+    src: .my.cnf.j2 
+    dest: ~/.my.cnf 
+    mode: 0600

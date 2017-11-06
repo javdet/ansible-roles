@@ -1,0 +1,9 @@
+FROM {{ build_image }}
+
+COPY . /var/www/html
+
+RUN chmod 0755 /var/www/html/entrypoint.sh
+ENTRYPOINT /var/www/html/entrypoint.sh
+
+VOLUME /var/www/html
+WORKDIR /var/www/html

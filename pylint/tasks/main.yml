@@ -1,0 +1,5 @@
+- name: Install pylint
+  become: yes
+  apt:
+    name: pylint
+    state: present

@@ -1,0 +1,21 @@
+- name: Download pjproject
+  get_url:
+    url: http://www.pjsip.org/release/{{ pjproject_version }}/pjproject-{{ pjproject_version }}.tar.bz2
+    dest: /tmp
+
+- name: Extract pjproject
+  become: yes
+  unarchive:
+    src: /tmp/pjproject-{{ pjproject_version }}.tar.bz2
+    dest: /tmp
+    copy: no
+
+- name: Build pjsip from tarball
+  become: yes
+  command: "{{ item }} chdir=/tmp/pjproject-{{ pjproject_version }}"
+  with_items:
+    - ./configure --prefix=/usr --libdir=/usr/lib64 --enable-shared --disable-sound --disable-resample --disable-video --disable-opencore-amr
+    - make dep
+    - make
+    - make install
+    - ldconfig

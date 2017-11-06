@@ -1,0 +1,4 @@
+- name: Install Web deploy
+  win_chocolatey: 
+    name: webdeploy 
+    version: "{{ webdeploy_version }}"

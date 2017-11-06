@@ -1,0 +1,22 @@
+---
+
+  - name: Create the database Asterisk
+    become: yes
+    mysql_db:
+      login_user: root
+      login_password: "{{ mysql_root_db_pass }}"
+      name: "{{ item }}" 
+      state: present
+    with_items: "{{ mysql_db_asterisk }}"
+
+  - name: Create the database user Asterisk
+    become: yes
+    mysql_user:
+      login_user: root
+      login_password: "{{ mysql_root_db_pass }}"
+      name: "{{ item.name }}"
+      password: "{{ item.pass|default('foobar') }}"
+      priv: "{{ item.priv|default('*.*:ALL') }}"
+      state: present 
+      host: "{{ item.host | default('localhost') }}"
+    with_items: "{{ mysql_user_asterisk }}"

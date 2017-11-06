@@ -1,0 +1,12 @@
+*
+!app
+!bin
+!src
+!web
+!var/cache/
+!var/logs/
+!var/bootstrap.php.cache
+!var/SymfonyRequirements.php
+!etc
+!vendor
+!entrypoint.sh

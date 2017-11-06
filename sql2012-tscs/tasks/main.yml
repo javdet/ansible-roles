@@ -1,0 +1,8 @@
+- name: Download SQL Server 2012 Transact-SQL Compiler Service
+  win_get_url:
+    url: "{{ sql2012_tscs_link }}"
+    dest: C:\distr\sqlls.msi
+
+- name: Install SQL Server 2012 Transact-SQL Compiler Service\
+  win_msi:
+    path: C:\distr\sqlls.msi

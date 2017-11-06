@@ -1,0 +1,104 @@
+- name: Build container
+  include: build.yml
+  when: build == "yes"
+
+- name: Create work directory
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /home/{{ host_user }}/{{ project_name }}
+    - /home/{{ host_user }}/{{ project_name }}/{{ component_name }}
+    - /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/nginx
+
+- name: Check running upstream
+  command: docker ps --filter "name={{ component_name }}.upstream" --format \{\{.Names\}\}
+  register: upstream_container
+  ignore_errors: yes
+
+- debug:
+    var: upstream_container
+
+- name: Copy docker-compose file
+  template:
+    src: docker-compose.{{ component_name }}.yml.j2
+    dest: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/docker-compose.yml
+
+- name: Copy docker-compose override file
+  template:
+    src: docker-compose.{{ component_name }}.{{ env }}.yml.j2
+    dest: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/docker-compose.{{ env }}.yml
+
+- name: Copy migrations
+  copy:
+    src: migrations-db.php
+    dest: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/migrations-db.php
+    mode: 0755
+
+- name: Pull docker compose
+  command: docker-compose -p {{ project_name }} -f docker-compose.yml -f docker-compose.{{ env }}.yml pull
+  args:
+    chdir: /home/{{ host_user }}/{{ project_name }}/{{ component_name }}/
+
+- name: First deploy
+  include: new.yml
+  when: upstream_container.stdout == ""
+
+- name: Not first deploy
+  include: update.yml
+  when: upstream_container.stdout != ""
+
+- name: Применение миграций
+  command: 'docker exec {{ upstream_container_current }} php ./vendor/bin/doctrine-migrations
+  --db-configuration=migrations-db.php --configuration=./vendor/vats/db-lib/migrations.yml --allow-no-migration
+  --no-interaction migrations:migrate'
+  when: component_name == "sync"
+
+- name: Синхронизация, прогрев кеша
+  command: 'docker exec {{ upstream_container_current }} php -f /var/www/app/console vats:sync'
+  when: component_name == "sync"
+
+- name: Create nginx directory
+  file: 
+    path: /home/{{ host_user }}/{{ inventory_hostname }}/nginx/conf.d/{{ project_name }}
+    state: directory
+
+- name: Copy nginx config 
+  template:
+    src: nginx.proxy.{{ component_name }}.conf.j2
+    dest: /home/{{ host_user }}/{{ inventory_hostname }}/nginx/conf.d/{{ project_name }}/{{ component_name }}.conf
+
+- name: Get host balancer container name
+  command: docker ps --filter "name={{ strip_hostname }}_balancer" -q
+  register: proxy_container
+  ignore_errors: true
+
+- name: Balancer reload
+  command: docker exec {{ proxy_container.stdout }} nginx -s reload
+
+- name: Add cron task sync
+  cron:
+    name: sync
+    minute: 0
+    hour: 5
+    user: "{{ host_user }}"
+    job: "docker exec {{ upstream_container_current }} php -f /var/www/app/console vats:sync"
+  when: component_name == "sync"
+
+- name: Remove old upstream container
+  command: docker rm -f {{ upstream_container.stdout }}
+  ignore_errors: true
+  when: upstream_container.stdout != ""
+
+- name: Remove old balancer container
+  command: docker rm -f {{ balancer_container.stdout }}
+  ignore_errors: true
+  when: upstream_container.stdout != ""
+
+- name: Удаление старых образов
+  shell: 'docker rmi $(docker images --quiet --filter "dangling=true")'
+  ignore_errors: true
+  
+- name: Удаление старых volume
+  shell: 'docker volume rm $(docker volume ls --quiet --filter "dangling=true")'
+  ignore_errors: true

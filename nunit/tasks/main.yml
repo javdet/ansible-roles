@@ -1,0 +1,4 @@
+- name: Install NUnit
+  win_chocolatey: 
+    name: nunit 
+    version: "{{ nunit_version }}"

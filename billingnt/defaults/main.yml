@@ -1,0 +1,11 @@
+task: XXX-XXX
+user: ansible
+host_user: ansible
+site_path: C:\Users\{{ user }}\{{ task }}
+base_host: 
+site: ['ris', 'api', 'stu', 'svc']
+components: ['ris', 'api', 'stu', 'svc', 'inventory']
+publish_user: 
+publish_pass: 
+project_repo: OSP
+name_repo: billingnt

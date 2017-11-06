@@ -1,0 +1,33 @@
+version: '2'
+services:
+  {{ component_name }}.balancer:
+    image: {{ docker_repo }}/base/nginx:1.10-alpine
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: '{{ component_name }}.balancer'
+  
+  {{ component_name }}.upstream:
+    volumes:
+      - /var/www/html
+    environment:
+      - SERVICE_80_NAME=vats-api
+      - DEBUG=1
+      - MONOLOG_LOGFILE=php://stdout
+      - MONOLOG_LEVEL=DEBUG
+      - DATABASE_URL=postgresql://{{ db_user }}:{{ db_pass }}@{{ db_address }}:{{ db_port }}/{{ db_name }}
+      - SOAP_URI=http://{{ site.api }}/
+      - SOAP_SERVICE_NAME=VatsApi
+      - VATS_SIP_DOMAIN={{ public_sip_domain }}
+      - FS_URL=http://{{ site.fs }}/
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: '{{ component_name }}.upstream'
+
+networks:
+  default:
+    external:
+      name: {{ strip_hostname }}_default

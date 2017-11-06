@@ -1,0 +1,23 @@
+os_type: "linux"
+agent_version: "5.14.3.1"
+agent_dir: "/itmh/programs/bamboo-agent"
+agent_user: "deployer"
+win_agent_user: "service_bamboo@itmh.ru"
+agent_name: ~
+agent_long_name: "bamboo-agent"
+agent_installer: "atlassian-bamboo-agent-installer-{{ agent_version }}.jar"
+agent_installer_dir: "/tmp/{{ agent_installer }}"
+win_agent_installer_dir: "C:\\distr\\{{ agent_installer }}"
+bamboo_server: "tetris.itmh.ru"
+
+capabilities: "yes"
+ansible_version: "2.1.1.0"
+ant_version: "1.9.4-3"
+composer_version: "1.2.0"
+composer_url: "https://getcomposer.org/download/{{ composer_version }}/composer.phar"
+composer_install_dir: /usr/local/bin
+docker_user: "deployer"
+docker_version: "1.11.1-0~jessie"
+nodejs_version: "6"
+docker_gpg_key: 58118E89F3A912897C070ADBF76221572C52609D
+key_server: hkp://p80.pool.sks-keyservers.net:80

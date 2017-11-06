@@ -1,0 +1,8 @@
+---
+
+mysql_db_asterisk: asterisk
+mysql_db_freeswitch: freeswitch
+mysql_db_opensips: opensips
+mysql_db_zabbix: zabbix
+
+service_name: asterisk

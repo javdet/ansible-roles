@@ -1,0 +1,13 @@
+---
+
+  - name: Install deb repo
+    become: yes
+    yum: name={{ zbx_server_repo_el7 }} state=present 
+
+  - name: Install zabbix-agent
+    become: yes
+    yum: name=zabbix-agent state=present
+
+  - name: Install linuxse manage
+    become: yes
+    yum: name=libselinux-python state=present

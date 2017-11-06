@@ -1,0 +1,64 @@
+[general]
+realm=aster
+tcpenable=yes
+sendrpid = yes
+sendrpid = pai
+nat=force_rport,comedia
+localnet=10.0.0.0/8
+externip={{ ansible_host }}
+canreinvite=no
+allowguest=no
+
+bindaddr=0.0.0.0
+transport=udp,tcp
+udpenable=yes
+bindport=5060
+
+;language=ru
+register={{ trunks.sbc.user }}:{{ trunks.sbc.secret }}@{{ trunks.sbc.host }}/{{ trunks.sbc.name }}
+
+[t](!)
+call-limit=2
+deny=0.0.0.0/0.0.0.0
+dtmfmode=rfc2833
+canreinvite=no
+context=from-internal
+host=dynamic
+trustrpid=yes
+sendrpid=no
+type=friend
+port=5060
+qualify=yes
+qualifyfreq=60
+transport=udp
+encryption=no
+callgroup=
+pickupgroup=
+permit=127.0.0.1/255.255.255.255
+callcounter=yes
+
+{% for key, value in sipusers.iteritems() %}
+[O_O{{ key }}](t)
+secret={{ value }}
+callerid="{{ key }}" <{{ key }}>
+{% endfor %}
+
+
+[z](!)
+disallow=all
+defaultuser={{ trunks.sbc.user }}
+type=peer
+nat=force_rport,comedia
+insecure=invite
+host={{ trunks.sbc.host }}
+fromuser={{ trunks.sbc.user }}
+dtmfmode=rfc2833
+context=from-trunk
+canreinvite=no
+allow=alaw
+allow=ulaw
+
+[{{ trunks.sbc.name }}](z)
+defaultuser={{ trunks.sbc.user }}
+secret={{ trunks.sbc.secret }}
+fromuser={{ trunks.sbc.user }}

@@ -1,0 +1,14 @@
+- name: Install the nginx packages yum
+  become: yes
+  yum: 
+    name: nginx 
+    state: present
+  when: ansible_os_family == "RedHat" or ansible_os_family == "CentOS"
+
+- name: Install the nginx packages 
+  become: yes
+  apt: 
+    name: nginx 
+    state: present 
+    update_cache: yes
+  when: ansible_os_family == "Debian" or ansible_os_family == "Ubuntu"

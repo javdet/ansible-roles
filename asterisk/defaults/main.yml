@@ -1,0 +1,8 @@
+---
+
+application_type: "source"
+asterisk_version: "13.17"
+jansson_version: "2.9"
+pjproject_version: "2.6"
+lame_version: "3.99.5"
+pjproject: "yes"

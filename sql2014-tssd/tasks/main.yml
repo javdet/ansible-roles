@@ -1,0 +1,8 @@
+- name: Download SQL Server 2014 Transact-SQL ScriptDom
+  win_get_url:
+    url: "{{ sql2014_tssd_link }}"
+    dest: C:\distr\SqlDom14.msi
+
+- name: Install SQL Server 2014 Transact-SQL ScriptDom
+  win_msi:
+    path: C:\distr\SqlDom14.msi

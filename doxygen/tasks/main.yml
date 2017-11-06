@@ -1,0 +1,4 @@
+- name: Install doxygen
+  win_chocolatey: 
+    name: doxygen.install 
+    version: "{{ doxygen_version }}"

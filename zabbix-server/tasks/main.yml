@@ -1,0 +1,19 @@
+---
+
+- name: Install the mysql packages in Centos derivatives
+  include: centos.yml
+  when: ansible_distribution == 'CentOS'
+
+- name: Install the mysql packages in Debian/Ubuntu derivatives
+  include: debian.yml
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Stratup zabbix
+  service: name=zabbix-server enabled=yes
+
+- name: Copy config
+  template:
+    src: zabbix_server.conf.j2
+    dest: /etc/zabbix/zabbix_server.conf
+    force: yes
+  notify: zabbix restart

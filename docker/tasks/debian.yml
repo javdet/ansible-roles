@@ -1,0 +1,31 @@
+- name: ensure docker dependencies are installed
+  become: yes
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - apt-transport-https
+    - ca-certificates
+    - software-properties-common
+
+- name: Add key
+  raw: curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg | sudo apt-key add -
+
+- name: Add docker repository
+  become: true
+  lineinfile:
+    line: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+    dest: /etc/apt/sources.list.d/docker.list
+    state: present
+    create: yes
+
+- name: Install docker-ce APT
+  become: yes
+  apt:
+    name: '{{ item }}'
+    state: installed
+    force: yes
+    update_cache: yes
+  with_items:
+      - docker-ce
+  notify: restart docker

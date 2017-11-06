@@ -1,0 +1,8 @@
+- name: Download SQL Server 2012 Management Objects
+  win_get_url:
+    url: "{{ sql2012_smo_link }}"
+    dest: C:\distr\SharedManagementObjects.msi
+
+- name: Install SQL Server 2012 Management Objects
+  win_msi:
+    path: C:\distr\SharedManagementObjects.msi

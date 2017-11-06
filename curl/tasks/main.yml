@@ -1,0 +1,11 @@
+- name: Install Curl
+  yum: 
+    name: curl
+    state: present
+  when: ansible_os_family == 'CentOS'
+
+- name: Install Curl
+  apt: 
+    name: curl
+    state: present
+  when: ansible_os_family == 'Debian'

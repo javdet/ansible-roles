@@ -1,0 +1,123 @@
+- include_vars: vault.yml
+
+- name: Install to OS debian 
+  include: "debian.yml"
+  when: ansible_os_family == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Install to OS centos
+  include: "centos.yml" 
+  when: ansible_os_family == "CentOS" or ansible_os_family == "RedHat" 
+
+- include: pjsip.yml
+  when: pjproject == "yes"
+
+- include: jansson.yml
+  when: pjproject == "yes"
+
+- name: Get lame source
+  become: yes
+  get_url:
+    url: https://sourceforge.net/projects/lame/files/lame/3.99/lame-{{ lame_version }}.tar.gz
+    dest: /tmp/lame-{{ lame_version }}.tar.gz
+    validate_certs: False
+
+- name: Unarchive lame
+  become: yes
+  unarchive:
+    src: /tmp/lame-{{ lame_version }}.tar.gz
+    dest: /tmp
+    copy: no
+
+- name: Build lame
+  become: yes
+  command: "{{ item }} chdir=/tmp/lame-{{ lame_version }}"
+  with_items:
+    - ./configure
+    - make
+    - make install
+
+- name: Download source code
+  become: yes
+  git:
+    repo: http://gerrit.asterisk.org/asterisk
+    dest: /usr/src/asterisk
+    version: "{{ asterisk_version }}"
+
+- name: Install mp3 tones
+  become: yes
+  command: /usr/src/asterisk/contrib/scripts/get_mp3_source.sh
+
+- name: Build Asterisk
+  become: yes
+  command: "{{ item }} chdir=/usr/src/asterisk"
+  with_items:
+    - ./configure --libdir=/usr/lib64
+    - make
+    - make install
+    - make samples
+    - make config
+    - ldconfig
+
+- name: Create group
+  become: yes
+  group:
+    name: asterisk
+    state: present
+
+- name: Create user
+  become: yes
+  user:
+    name: asterisk
+    comment: 'Asterisk process user'
+    shell: /sbin/nologin 
+    group: asterisk
+
+- name: Copy init script
+  become: yes
+  copy:
+    src: asterisk.service
+    dest: /etc/systemd/system/asterisk.service
+
+- name: Copy rotate script
+  become: yes
+  copy:
+    src: asterisk.rotate
+    dest: /etc/logrotate.d/asterisk
+
+- name: Set ownership on important directories for the asterisk user
+  become: yes
+  file: path="{{ item.path }}" owner=asterisk group=asterisk recurse=yes
+  with_items:
+    - { path: '/usr/lib64/asterisk/' }
+    - { path: '/var/lib/asterisk/' }
+    - { path: '/var/spool/asterisk/' }
+    - { path: '/var/log/asterisk/' }
+    - { path: '/var/run/asterisk/' }
+
+- name: Copy odbc configs
+  become: yes
+  template:
+    src: odbc/{{ item }}.j2
+    dest: /etc/{{ item }}
+  with_items:
+    - odbc.ini
+    - odbcinst.ini
+
+- name: Copy asterisk configs
+  become: yes
+  template:
+    src: asterisk/{{ item }}.j2
+    dest: /etc/asterisk/{{ item }}
+  with_items:
+    - modules.conf
+    - logger.conf
+    - res_odbc.conf
+    - cdr_adaptive_odbc.conf
+    - asterisk.conf
+
+- name: Asterisk boot enabled
+  become: yes
+  service:
+    name: asterisk
+    enabled: yes
+  notify: restart asterisk

@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  balancer:
+    image: nginx:1.12-alpine
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - kibana
+    restart: always
+    volumes:
+      - ./nginx/kibana.conf:/etc/nginx/conf.d/kibana.conf
+
+  elasticsearch:
+    image: logger_elasticsearch:latest
+    volumes:
+      - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./elasticsearch/storage:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+
+  logstash:
+    image: logger_logstash:latest
+    volumes:
+      - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    ports:
+      - "5000:5000"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: logger_kibana:latest
+    volumes:
+      - ./kibana/:/usr/share/kibana/config
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_URL: "http://elasticsearch:9200"
+    depends_on:
+      - elasticsearch

@@ -1,0 +1,36 @@
+- name: Create bamboo-agent home directory
+  win_file: 
+    path: "{{ item }}" 
+    state: directory
+  with_items:
+    - C:\bamboo
+    - C:\distr
+    - C:\bamboo\{{ agent_version }}
+
+# - name: Grant permission bamboo user to home directory
+#  win_acl: 
+#     path: C:\bamboo
+#     user: "{{ win_agent_user }}"
+#     rights: FullControl 
+#     type: allow
+
+- name: Download bamboo-agent
+  win_get_url: 
+    url: https://{{ bamboo_server }}/agentServer/agentInstaller/atlassian-bamboo-agent-installer-{{ agent_version }}.jar 
+    dest: "{{ win_agent_installer_dir }}"
+
+- name: Install bamboo-agent
+  win_command: java -Dbamboo.home=C:\bamboo\{{ agent_version }} -Dbamboo.agent.ignoreServerCertName=true -jar {{ win_agent_installer_dir }} https://{{ bamboo_server }}/agentServer/ installntservice
+  ignore_errors: true
+
+- name: Start bamboo-agent
+  win_service: 
+    name: "bamboo-remote-agent" 
+    start_mode: auto 
+    state: started
+
+- name: Copy bamboo-capabilities
+  win_template:
+      src: "bamboo-capabilities-win.j2"
+      dest: C:\bamboo\{{ agent_version }}\bin\bamboo-capabilities.properties
+  notify: restart bamboo-agent-win

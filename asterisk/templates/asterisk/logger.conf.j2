@@ -1,0 +1,36 @@
+[general]
+;dateformat=%F %T       ; ISO 8601 date format
+;dateformat=%F %T.%3q   ; with milliseconds
+;
+;
+; This makes Asterisk write callids to log messages
+; (defaults to yes)
+;use_callids = no
+;
+; This appends the hostname to the name of the log files.
+;appendhostname = yes
+;
+; This determines whether or not we log queue events to a file
+; (defaults to yes).
+;queue_log = no
+;
+; Determines whether the queue_log always goes to a file, even
+; when a realtime backend is present (defaults to no).
+;queue_log_to_file = yes
+;
+; Set the queue_log filename
+; (defaults to queue_log)
+;queue_log_name = queue_log
+;
+;rotatestrategy = rotate
+;
+[logfiles]
+;debug => debug
+;security => security
+;console => notice,warning,error,dtmf
+;messages => notice,warning,error
+full => notice,warning,error,debug,verbose(9),dtmf,fax
+;syslog keyword : This special keyword logs to syslog facility
+;
+;syslog.local0 => notice,warning,error
+;

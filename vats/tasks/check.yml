@@ -1,0 +1,14 @@
+- name: Check existing repo dir
+  stat:
+    path: /home/{{ user }}/{{ task }}/{{ project_name }}/{{ component_name }}
+  register: p
+
+- name: Check git branch if exist
+  shell: git branch | grep '*'
+  args:
+    chdir: /home/{{ user }}/{{ task }}/{{ project_name }}/{{ component_name }}
+  register: b
+  when: p.stat.exists
+
+- meta: end_play
+  when: b is defined and b.stdout != "* develop"

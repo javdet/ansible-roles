@@ -1,0 +1,32 @@
+server {
+    listen [::]:443 ssl;
+    listen 443 ssl;
+
+    server_name {{ site.arms }};
+
+    ssl_certificate     ssl/unix.test.{{ base_host }}.cer;
+    ssl_certificate_key ssl/unix.test.{{ base_host }}.key;
+
+    client_max_body_size 128m;
+
+    location / {
+        proxy_pass http://{{ balancer_container_current }};
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection upgrade;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Request-Start $msec;
+    }
+}
+
+server {
+    listen [::]:80;
+    listen 80;
+    server_name {{ site.arms }};
+
+    return 301 https://$host:443$request_uri;
+}

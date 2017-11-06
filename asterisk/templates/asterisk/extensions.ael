@@ -1,0 +1,1018 @@
+context default {
+    _X. => 	Hangup;
+}
+
+//----------------------internal calls---------------------------------//
+context internal {
+    *21 => {
+		Set(MemberChannel=${CHANNEL(channeltype)}/${CHANNEL(peername)});
+		AddQueueMember(ccq,${MemberChannel});
+		Hangup;
+	}
+	
+    *22 => {
+		Set(MemberChannel=${CHANNEL(channeltype)}/${CHANNEL(peername)});
+		RemoveQueueMember(ccq,${MemberChannel});
+		Hangup;
+	}
+	
+    *23 => {
+		Set(MemberChannel=${CHANNEL(channeltype)}/${CHANNEL(peername)});
+		PauseQueueMember(ccq,${MemberChannel});
+		Hangup;
+	}
+
+    *24 => {
+		Set(MemberChannel=${CHANNEL(channeltype)}/${CHANNEL(peername)});
+		UnpauseQueueMember(ccq,${MemberChannel});
+		Hangup;
+	}
+
+//----------------------voicemail---------------------------------------//
+    100 => {
+		Log(NOTICE, Dialing out from ${CALLERID(all)} to VoiceMail (100));
+		VoiceMailMain(${CALLERID(num)}@default);
+		Hangup;
+	}
+	
+    101 => {
+		Log(NOTICE, Dialing out from ${CALLERID(all)} to VoiceMail (101));
+		VoiceMailMain(@default);
+		Hangup;
+	}
+    102 => {
+		Log(NOTICE, Dialing out from ${CALLERID(all)} to Hylafax (102));
+		Dial(IAX2/iaxmodem0/${EXTEN},10);
+		Hangup;
+	    }
+	    
+    7001 => {
+		Log(NOTICE, Job ON before ${DB(job/count)});
+		Set(DB(job/count)=1);
+		Playback(day);
+		Hangup;
+	    }
+	    
+    7002 => {
+		Log(NOTICE, Job OFF before ${DB(job/count)});
+		Set(DB(job/count)=0);
+		Playback(night);
+		Hangup;
+	    }
+    7000 => {
+		SET(FAX_FILENAME=/var/spool/asterisk/fax/${CALLERID(num)}_${STRFTIME(${EPOCH},,%d_%m_%Y-%H_%M_%S)});
+		goto recive_fax,s,1;
+	    }
+	    
+    _050. => {
+		Set(count=${DB(gsm/count)});
+		if(!${EXISTS(${count})}) {
+		    Set(count=1);
+		}
+		if(${count} < 1 || ${count} > 3){
+		    count=1;
+		}
+		SET(DB(gsm/count)=${MATH(${count}+1,int)});
+		for(i=0; ${i}<3; i=${i}+1) {
+		    Noop(${SIPPEER(gsm${count},curcalls)});
+		    if(${SIPPEER(gsm${count},curcalls)}<2)
+		    {
+		    	Dial(SIP/gsm${count}/${EXTEN:3},60);
+		    	Hangup;
+		    }
+		    count=${count}+1;
+		    if(${count}>3)
+		    {
+			count=1;
+		    }
+		}
+		Hangup;
+	    }
+    _051. => {
+		Dial(SIP/gsm1/${EXTEN},60);
+		Hangup;
+	    }
+
+    _052. => {
+		Dial(SIP/gsm1/${EXTEN},60);
+		Hangup;
+	    }
+
+    _053. => {
+		Dial(SIP/gsm2/${EXTEN},60);
+		Hangup;
+	    }
+
+    _054. => {
+		Dial(SIP/gsm2/${EXTEN},60);
+		Hangup;
+	    }
+
+    _055. => {
+		Dial(SIP/gsm3/${EXTEN},60);
+		Hangup;
+	    }
+
+    _056. => {
+		Dial(SIP/gsm3/${EXTEN},60);
+		Hangup;
+	    }
+    _060. => {
+		Dial(SIP/ttksip/${EXTEN:3},60);
+		Hangup;
+	    }
+
+    _066. => {
+		Dial(SIP/spacetel/${EXTEN:3},60);
+		Hangup;
+	    }
+
+    5555 =>	Dial(SIP/5555);
+    6666 =>	Dial(SIP/6666);
+    7777 =>	Dial(SIP/7777);
+    8888 =>	Dial(SIP/8888);
+    _20XX =>	Dial(SIP/${EXTEN});
+    8000 =>	goto ccq-context,s,1;
+    
+    4101 =>	Dial(SIP/4101);
+    4102 =>	Dial(SIP/4102);
+    4103 =>	Dial(SIP/4103);
+    4104 =>	Dial(SIP/4104);
+    4105 =>	Dial(SIP/4105);
+    1100 => {
+		Set(CALLERID(name)=FXS_OUT_${EXTEN});
+		Dial(OOH323/addpac/${EXTEN});
+		Hangup;
+	    }
+    _+7. => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_8${EXTEN:2}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+    		Dial(SIP/ttksip/8${EXTEN:2});
+    	    }
+    _7. => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_8${EXTEN:1}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+	    	Dial(SIP/ttksip/8${EXTEN:1});
+	    }
+    
+    _X. => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Dial(SIP/ttksip/${EXTEN},60,T);
+		Verbose(${DIALSTATUS});
+	    }
+
+//-----------Dial Mobile-------------------------------//
+    _89X. => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(prefix=${ODBC_gsm(${EXTEN:0:5},${EXTEN:0:6},${EXTEN:0:7},${EXTEN:0:8},${EXTEN:0:9},${EXTEN:0:10},${EXTEN})});
+		if(${EXISTS(${prefix})}){
+		    Set(count=${DB(gsm/count)});
+		    if(!${EXISTS(${count})}) {
+			Set(count=1);
+		    }
+		    if(${count} < 1 || ${count} > 2){
+			count=1;
+		    }
+		    SET(DB(gsm/count)=${MATH(${count}+1,int)});
+		    for(i=0; ${i}<2; i=${i}+1) {
+			Noop(${SIPPEER(gsm${count},curcalls)});
+			if(${SIPPEER(gsm${count},curcalls)}<2)
+			{
+		    	    Dial(SIP/gsm${count}/${EXTEN},60);
+		    	    Hangup;
+			}
+			count=${count}+1;
+			if(${count}>2)
+			{
+			    count=1;
+			}
+		    }
+		    Dial(SIP/ttksip/${EXTEN},60,T);
+		    Verbose(${DIALSTATUS});
+		} else {
+		    Dial(SIP/ttksip/${EXTEN},60,T);
+		}
+		Hangup;
+	    }
+    _9. => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_8${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(prefix=${ODBC_gsm(8${EXTEN:0:4},8${EXTEN:0:5},8${EXTEN:0:6},8${EXTEN:0:7},8${EXTEN:0:8},8${EXTEN:0:9},8${EXTEN})});
+		if(${EXISTS(${prefix})}) {
+		    Set(count=${DB(gsm/count)});
+		    if(!${EXISTS(${count})}) {
+			Set(count=1);
+		    }
+		    if(${count} < 1 || ${count} > 2){
+			count=1;
+		    }
+		    SET(DB(gsm/count)=${MATH(${count}+1,int)});
+		    for(i=0; ${i}<2; i=${i}+1) {
+			Noop(${SIPPEER(gsm${count},curcalls)});
+			if(${SIPPEER(gsm${count},curcalls)}<2)
+			{
+		    	    Dial(SIP/gsm${count}/8${EXTEN},60);
+		    	    Hangup;
+			}
+			count=${count}+1;
+			if(${count}>2)
+			{
+			    count=1;
+			}
+		    }
+		    Dial(SIP/ttksip/8${EXTEN});
+		} else {
+		    Dial(SIP/ttksip/8${EXTEN});
+		}
+		Hangup;
+	    }
+    _79X. => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_8${EXTEN:1}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(prefix=${ODBC_gsm(8${EXTEN:1:4},8${EXTEN:1:5},8${EXTEN:1:6},8${EXTEN:1:7},8${EXTEN:1:8},8${EXTEN:1:9},8${EXTEN:1})});
+		if(${EXISTS(${prefix})}) {
+		    Set(count=${DB(gsm/count)});
+		    if(!${EXISTS(${count})}) {
+			Set(count=1);
+		    }
+		    if(${count} < 1 || ${count} > 2){
+			count=1;
+		    }
+		    SET(DB(gsm/count)=${MATH(${count}+1,int)});
+		    for(i=0; ${i}<2; i=${i}+1) {
+			Noop(${SIPPEER(gsm${count},curcalls)});
+			if(${SIPPEER(gsm${count},curcalls)}<2)
+			{
+		    	    Dial(SIP/gsm${count}/8${EXTEN:1},60);
+		    	    Hangup;
+			}
+			count=${count}+1;
+		        if(${count}>2)
+			{
+			    count=1;
+			}
+		    }
+		    Dial(SIP/ttksip/8${EXTEN:1});
+		} else {
+		    Dial(SIP/ttksip/8${EXTEN:1});
+		}
+		Hangup;
+	    }
+    _+79X. => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_8${EXTEN:2}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(prefix=${ODBC_gsm(8${EXTEN:2:4},8${EXTEN:2:5},8${EXTEN:2:6},8${EXTEN:2:7},8${EXTEN:2:8},8${EXTEN:2:9},8${EXTEN:2})});
+		if(${EXISTS(${prefix})}) {
+		    Set(count=${DB(gsm/count)});
+		    if(!${EXISTS(${count})}) {
+			Set(count=1);
+		    }
+		    if(${count} < 1 || ${count} > 2){
+			count=1;
+		    }
+		    SET(DB(gsm/count)=${MATH(${count}+1,int)});
+		    for(i=0; ${i}<2; i=${i}+1) {
+			Noop(${SIPPEER(gsm${count},curcalls)});
+			if(${SIPPEER(gsm${count},curcalls)}<2)
+			{
+		    	    Dial(SIP/gsm${count}/8${EXTEN:2},60);
+		    	    Hangup;
+			}
+			count=${count}+1;
+			if(${count}>2)
+			{
+			    count=1;
+			}
+		    }
+		    Dial(SIP/ttksip/8${EXTEN:2});
+		} else {
+		    Dial(SIP/ttksip/8${EXTEN:2});
+		}
+		Hangup;
+	    }
+}
+
+context make_call {    
+    _7. => {
+		Set(CALL_NUMBER=${EXTEN});
+		SET(MONITOR_FILENAME=${mycid}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Dial(SIP/ttksip/8${EXTEN:1},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		Hangup;
+	    }
+		
+    _+7. => {
+		Set(CALL_NUMBER=${EXTEN});
+		SET(MONITOR_FILENAME=${mycid}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Dial(SIP/ttksip/8${EXTEN:2},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		Hangup;
+	    }
+    
+    _X. => {
+		Set(CALL_NUMBER=${EXTEN});
+		SET(MONITOR_FILENAME=${mycid}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Dial(SIP/ttksip/${EXTEN},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		Hangup;
+	    }
+
+//-----------Dial Mobile-------------------------------//
+    _9. => {
+		Set(CALL_NUMBER=${EXTEN});
+		SET(MONITOR_FILENAME=${mycid}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(prefix=${ODBC_gsm(8${EXTEN:0:4},8${EXTEN:0:5},8${EXTEN:0:6},8${EXTEN:0:7},8${EXTEN:0:8},8${EXTEN:0:9},8${EXTEN})});
+		if(${EXISTS(${prefix})}) {
+		    Set(count=${DB(gsm/count)});
+		    if(!${EXISTS(${count})}) {
+		        Set(count=1);
+		    }
+		    if(${count} < 1 || ${count} > 3){
+		        count=1;
+		    }
+		    SET(DB(gsm/count)=${MATH(${count}+1,int)});
+		    for(i=0; ${i}<3; i=${i}+1) {
+		        Noop(${SIPPEER(gsm${count},curcalls)});
+		        if(${SIPPEER(gsm${count},curcalls)}<2)
+		        {
+		        	Dial(SIP/gsm${count}/8${EXTEN},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		        	Hangup;
+		        }
+		        count=${count}+1;
+		        if(${count}>3)
+		        {
+		        	count=1;
+		        }
+		    }
+		    Dial(SIP/ttksip/8${EXTEN},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		} else {
+		    Dial(SIP/ttksip/8${EXTEN},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		}
+		Hangup;
+	    }
+    _89. => {
+		Set(CALL_NUMBER=${EXTEN});
+		SET(MONITOR_FILENAME=${mycid}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Set(prefix=${ODBC_gsm(${EXTEN:0:5},${EXTEN:0:6},${EXTEN:0:7},${EXTEN:0:8},${EXTEN:0:9},${EXTEN:0:10},${EXTEN})});
+		if(${EXISTS(${prefix})}) {
+		    Mixmonitor(${MONITOR_FILENAME});
+		    Set(count=${DB(gsm/count)});
+		    if(!${EXISTS(${count})}) {
+			Set(count=1);
+		    }
+		    if(${count} < 1 || ${count} > 3){
+		        count=1;
+		    }
+		    SET(DB(gsm/count)=${MATH(${count}+1,int)});
+		    for(i=0; ${i}<3; i=${i}+1) {
+			Noop(${SIPPEER(gsm${count},curcalls)});
+		        if(${SIPPEER(gsm${count},curcalls)}<2)
+			{
+		    	    Dial(SIP/gsm${count}/${EXTEN},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		    	    Hangup;
+			}
+			count=${count}+1;
+		        if(${count}>3)
+			{
+			    count=1;
+			}
+		    }
+		    Dial(SIP/ttksip/${EXTEN},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		} else {
+		    Dial(SIP/ttksip/${EXTEN},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		}
+		Hangup;
+	    }
+    _79. => {
+		Set(CALL_NUMBER=${EXTEN});
+		SET(MONITOR_FILENAME=${mycid}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(prefix=${ODBC_gsm(8${EXTEN:1:4},8${EXTEN:1:5},8${EXTEN:1:6},8${EXTEN:1:7},8${EXTEN:1:8},8${EXTEN:1:9},8${EXTEN:1})});
+		if(${EXISTS(${prefix})}) {
+		    Set(count=${DB(gsm/count)});
+		    if(!${EXISTS(${count})}) {
+		        Set(count=1);
+		    }
+		    if(${count} < 1 || ${count} > 3){
+		        count=1;
+		    }
+		    SET(DB(gsm/count)=${MATH(${count}+1,int)});
+		    for(i=0; ${i}<3; i=${i}+1) {
+		        Noop(${SIPPEER(gsm${count},curcalls)});
+		        if(${SIPPEER(gsm${count},curcalls)}<2)
+		        {
+		        	Dial(SIP/gsm${count}/8${EXTEN:1},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		        	Hangup;
+		        }
+		        count=${count}+1;
+		        if(${count}>3)
+		        {
+		    	    count=1;
+			}
+		    }
+		    Dial(SIP/ttksip/8${EXTEN:1},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		} else {
+		    Dial(SIP/ttksip/8${EXTEN:1},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		}
+		Hangup;
+	    }
+    _+79. => {
+		Set(CALL_NUMBER=${EXTEN});
+		SET(MONITOR_FILENAME=${mycid}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(prefix=${ODBC_gsm(8${EXTEN:2:4},8${EXTEN:2:5},8${EXTEN:2:6},8${EXTEN:2:7},8${EXTEN:2:8},8${EXTEN:2:9},8${EXTEN:2})});
+		if(${EXISTS(${prefix})}) {
+		    Set(count=${DB(gsm/count)});
+		    if(!${EXISTS(${count})}) {
+		        Set(count=1);
+		    }
+		    if(${count} < 1 || ${count} > 3){
+		        count=1;
+		    }
+		    SET(DB(gsm/count)=${MATH(${count}+1,int)});
+		    for(i=0; ${i}<3; i=${i}+1) {
+		        Noop(${SIPPEER(gsm${count},curcalls)});
+		        if(${SIPPEER(gsm${count},curcalls)}<2)
+		        {
+		        	Dial(SIP/gsm${count}/8${EXTEN:2},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		        	Hangup;
+		        }
+		        count=${count}+1;
+		        if(${count}>3)
+		        {
+		    	    count=1;
+		        }
+		    }
+		    Dial(SIP/ttksip/8${EXTEN:2},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		} else {
+		    Dial(SIP/ttksip/8${EXTEN:2},60,THM(take_call^${uid}^${EXTEN}^${CHANNEL}));
+		}
+		Hangup;
+	    }
+    h =>	System(/var/www/contact/after_call -a ${mycid} -n ${CALL_NUMBER} -c 1 -i ${UNIQUEID} -f ${uid} &);
+}
+
+context ttksipcontext {
+    _X. => {
+		Set(CALLERID(name)=UFA_TTK);
+		goto ccq-context,s,1;
+    }
+}
+
+context gsmcontext {
+    _800[123456] => {
+		    Set(CALLERID(name)=UFA_SIM_${EXTEN:3});
+		    goto ccq-context,s,1;
+		    Hangup;
+    }
+}    
+
+context gsmout_context {
+    _X. => {
+		    Set(CALLERID(name)=GSM_OUT_${EXTEN});
+		    Dial(SIP/gsm1/${EXTEN});
+		    Hangup;
+    }
+    1100 => {
+		Set(CALLERID(name)=FXS_OUT_${EXTEN});
+		Dial(OOH323/addpac/${EXTEN});
+		Hangup;
+	    }
+    1102 => {
+		Set(CALLERID(name)=FXS_OUT_${EXTEN});
+		Dial(OOH323/addpac/${EXTEN});
+		Hangup;
+	    }
+}
+
+    
+context ccq-context {
+
+    s => {
+	    Verbose(1, Caller ${CALLERID(All)} has entered the queue);
+	    Answer();
+	    Wait(1);
+	    Set(count=${DB(job/count)});
+	    if(!${EXISTS(${count})}) {
+		Playback(welcome);
+	    } else {
+		if("${count}"=="1") {
+		    Playback(welcome);
+		} else {
+		    Playback(welcome_night);
+		    SET(FAX_FILENAME=/var/spool/asterisk/fax/${CALLERID(num)}_${STRFTIME(${EPOCH},,%d_%m_%Y-%H_%M_%S)});
+		    goto recive_fax,s,1;
+		}
+	    }
+	    Verbose(members  ____  ${QUEUE_MEMBER(ccq,logged)});
+	    Verbose(member list ____  ${QUEUE_MEMBER_LIST(ccq)});
+	    //Background(qs1);
+	    //Background(qs2);
+	    SET(MONITOR_FILENAME=/var/spool/asterisk/monitor/${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/in_${STRFTIME(${EPOCH},,%d-%H_%M_%S)});
+	    SET(FROM_NUM=${CALLERID(num)});
+	    Queue(ccq,t,,,,,on_call);
+	    Hangup;
+	}
+
+    h => { 
+	    if(${EXISTS(${CONNECTEDLINE(num)})})
+	    {
+		System(mv ${MONITOR_FILENAME}.wav ${MONITOR_FILENAME}_${CONNECTEDLINE(num)}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME:28}_${CONNECTEDLINE(num)}.wav);
+    		System(/var/www/contact/after_call -a ${CONNECTEDLINE(num)} -n ${FROM_NUM} -c 0 -i ${UNIQUEID} -f 0 &);
+    	    } else {
+    		System(mv ${MONITOR_FILENAME}.wav ${MONITOR_FILENAME}_${CONNECTEDLINE(num)}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME:28}_${CONNECTEDLINE(num)}.wav);
+    		System(/var/www/contact/after_call -a ${CDR(dstchannel):4:4} -n ${FROM_NUM} -c 0 -i ${UNIQUEID} -f 0 &);
+    		System(/var/www/contact/on_call -n ${FROM_NUM} -a ${CDR(dstchannel):4:4} -t 5 -i ${UNIQUEID});
+    	    }
+	}
+}
+
+context ccqv-context {
+    s => {
+	    Verbose(1, Caller ${CALLERID(All)} has entered the queue with V);
+	    Answer();
+	    Background(qs1);
+	    //Background(qs2);
+	    ifTime(9:00-21:00|*|*|*) {
+		Background(qs3);
+		Verbose(members  ____  ${QUEUE_MEMBER(ccq,logged)});
+		Verbose(member list ____  ${QUEUE_MEMBER_LIST(ccq)});
+		Queue(ccq);
+	    } else {
+		Wait(1);
+		Background(qsaf1);
+		Background(qsaf2);
+		Background(qsaf3);
+		Background(qsaf4);
+		Voicemail(4001@default);
+		Hangup;
+	    }
+    }
+}
+
+context ccqng-context {
+    s => {
+		Verbose(1, Caller ${CALLERID(All)} has entered the queue with V);
+		Wait(2);
+		Answer();
+		Background(qs1);
+		Background(ng);
+		Voicemail(4001@default);
+		Hangup;
+    }
+}
+
+context transfer {
+    _10XX => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(CALL_NUMBER=${EXTEN});
+		Dial(SIP/${EXTEN},60,HM(take_internal^${UNIQUEID}^${EXTEN}^${CALLERID(num)}));
+	}
+    _20XX => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(CALL_NUMBER=${EXTEN});
+		Dial(SIP/${EXTEN},60,HM(take_internal^${UNIQUEID}^${EXTEN}^${CALLERID(num)}));
+	}
+    5555 => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(CALL_NUMBER=${EXTEN});
+		Dial(SIP/${EXTEN},60,HM(take_internal^${UNIQUEID}^${EXTEN}^${CALLERID(num)}));
+	}
+    6666 => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(CALL_NUMBER=${EXTEN});
+		Dial(SIP/${EXTEN},60,HM(take_internal^${UNIQUEID}^${EXTEN}^${CALLERID(num)}));
+	}
+    7777 => {
+		SET(MONITOR_FILENAME=${CALLERID(num)}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(CALL_NUMBER=${EXTEN});
+		Dial(SIP/${EXTEN},60,HM(take_internal^${UNIQUEID}^${EXTEN}^${CALLERID(num)}));
+	}
+    8888 => {
+		SET(MONITOR_FILENAME=${mycid}/${STRFTIME(${EPOCH},,%Y_%m)}/out_${STRFTIME(${EPOCH},,%d-%H_%M_%S)}_${EXTEN}.wav);
+		Set(CDR(filename)=${MONITOR_FILENAME});
+		Mixmonitor(${MONITOR_FILENAME});
+		Set(CALL_NUMBER=${EXTEN});
+		Dial(SIP/${EXTEN},60,HM(take_internal^${UNIQUEID}^${EXTEN}^${CALLERID(num)}));
+	}
+    7000 => {
+		SET(FAX_FILENAME=/var/spool/asterisk/fax/${CALLERID(num)}_${STRFTIME(${EPOCH},,%d_%m_%Y-%H_%M_%S)});
+		goto recive_fax,s,1;
+        }
+    
+    h => 	System(/var/www/contact/after_call -a ${CALL_NUMBER} -n ${CALLERID(num)} -c 2 -i ${UNIQUEID} -f 0 &);
+}
+
+context recive_fax {
+    s => {
+	    ReceiveFAX(${FAX_FILENAME}.tif);
+	    Hangup;
+	}
+	
+    h =>  System(/usr/local/sbin/sendfax -f ${FAX_FILENAME} -r ${CALLERID(num)} -e goff@odmin.ru);
+}
+
+context autodialer {
+    s => {
+	    Answer;
+	    Wait(1);
+	    Playback(dolg);
+	    if ("${summa}" == "no") {
+		Hangup;
+	    }
+	    Set(rubl=${CUT(summa,.,1)});
+	    Set(kopeek=${CUT(summa,.,2)});
+	    switch (${LEN(${rubl})}) {		//произносим сумму (рубли)
+	        case 1:
+	            if ("${rubl}"=="1") {
+	                SayNumber(${rubl});
+	                Playback(ivr/rubl);
+	            } else if ("${rubl}"=="2" || "${rubl}"=="3" || "${rubl}"=="4") {
+	                SayNumber(${rubl});
+	                Playback(ivr/rublya);
+	            } else {
+	        	SayNumber(${rubl});
+	        	Playback(ivr/rublei);
+	            }
+	        break;
+	        case 2:
+	    	    if ("${rubl:0:1}"=="1")
+	            {
+	        	SayNumber(${rubl});
+	                Playback(ivr/rublei);
+	            } else {
+	                SayNumber(${rubl:0:1}0);
+	                if ("${rubl:1:1}"=="1") {
+	                    SayNumber(${rubl:1:1});
+	            	    Playback(ivr/rubl);
+	                } else if ("${rubl:1:1}"=="2" || "${rubl:1:1}"=="3" || "${rubl:1:1}"=="4") {
+	                    SayNumber(${rubl:1:1});
+	                    Playback(ivr/rublya);
+	                } else if ("${rubl:1:1}"=="0") {
+	            	    Playback(ivr/rublei);
+	                } else {
+	                    SayNumber(${rubl:1:1});
+	                    Playback(ivr/rublei);
+	        	}
+	            }
+	        break;
+	        case 3:
+	    	    Playback(ivr/${rubl:0:1}00);
+	    	    if ("${rubl:1:1}"=="0") {
+	    		if ("${rubl:2:1}"=="1") {
+	        	    SayNumber(${rubl:2:1});
+	        	    Playback(ivr/rubl);
+	    		} else if ("${rubl:2:1}"=="2" || "${rubl:2:1}"=="3" || "${rubl:2:1}"=="4") {
+	        	    SayNumber(${rubl:2:1});
+	        	    Playback(ivr/rublya);
+	    		} else if ("${rubl:2:1}"=="0") {
+	        	    Playback(ivr/rublei);
+	    		} else {
+	        	    SayNumber(${rubl:2:1});
+	        	    Playback(ivr/rublei);
+	    		}
+	    	    } else if ("${rubl:1:1}"=="1") {
+	    		SayNumber(${rubl:1:2});
+	    		Playback(ivr/rublei);
+	    	    } else {
+	    		SayNumber(${rubl:1:1}0);
+	    		if ("${rubl:2:1}"=="1") {
+	            	    SayNumber(${rubl:2:1});
+	            	    Playback(ivr/rubl);
+	        	} else if ("${rubl:2:1}"=="2" || "${rubl:2:1}"=="3" || "${rubl:2:1}"=="4") {
+	            	    SayNumber(${rubl:2:1});
+	            	    Playback(ivr/rublya);
+	        	} else if ("${rubl:2:1}"=="0") {
+	            	    Playback(ivr/rublei);
+	                } else {
+	                    SayNumber(${rubl:2:1});
+	                    Playback(ivr/rublei);
+	        	}
+	            }
+	        break;
+	        case 4:
+	    	    if ("${rubl:0:1}"=="1") {
+	                SayNumber(${rubl:0:1});
+	                Playback(ivr/tisyacha);
+	    	    } else if ("${rubl:0:1}"=="2" || "${rubl:0:1}"=="3" || "${rubl:0:1}"=="4") {
+	            	SayNumber(${rubl:0:1});
+	                Playback(ivr/tisyachi);
+	            } else {
+	                SayNumber(${rubl:0:1});
+	            	Playback(ivr/tisyach);
+	            }
+	            if (!("${rubl:1:1}"=="0")) {
+	                Playback(ivr/${rubl:1:1}00);
+	            }
+	            if ("${rubl:2:1}"=="0") {
+	            	if ("${rubl:3:1}"=="1") {
+	                    SayNumber(${rubl:3:1});
+	                    Playback(ivr/rubl);
+	                } else if ("${rubl:3:1}"=="2" || "${rubl:3:1}"=="3" || "${rubl:3:1}"=="4") {
+	                    SayNumber(${rubl:3:1});
+	                    Playback(ivr/rublya);
+	                } else if ("${rubl:3:1}"=="0") {
+	                    Playback(ivr/rublei);
+	                } else {
+	                    SayNumber(${rubl:3:1});
+	                    Playback(ivr/rublei);
+	                }
+	            } else if ("${rubl:2:1}"=="1") {
+	                SayNumber(${rubl:2:2});
+	        	Playback(ivr/rublei);
+	            } else {
+	                SayNumber(${rubl:2:1}0);
+	                if ("${rubl:3:1}"=="1") {
+	            	    SayNumber(${rubl:3:1});
+	                    Playback(ivr/rubl);
+	    		} else if ("${rubl:3:1}"=="2" || "${rubl:3:1}"=="3" || "${rubl:3:1}"=="4") {
+	                    SayNumber(${rubl:3:1});
+	            	    Playback(ivr/rublya);
+	                } else if ("${rubl:3:1}"=="0") {
+	                    Playback(ivr/rublei);
+	                } else {
+	                    SayNumber(${rubl:3:1});
+	                    Playback(ivr/rublei);
+	        	}
+	            }
+	        break;
+	        case 5:
+	        if ("${rubl:0:1}"=="1")
+	        {
+	    	    SayNumber(${rubl:1:2});
+	    	    Playback(ivr/tisyach);
+	        } else {
+	    	    SayNumber(${rubl:0:1}0);
+	    	    if ("${rubl:1:1}"=="1") {
+	        	SayNumber(${rubl:1:1});
+	    	        Playback(ivr/tisyacha);
+	    	    } else if ("${rubl:1:1}"=="1") {
+	    	        SayNumber(${rubl:1:1});
+	    	        Playback(ivr/tisyachi);
+	    	    } else if ("${rubl:1:1}"=="3" || "${rubl:1:1}"=="4") {
+	    	        SayNumber(${rubl:1:1});
+	    	        Playback(ivr/tisyachi);
+	    	    } else if ("${rubl:1:1}"=="0") {
+	    	        Playback(ivr/tisyach);
+	    	    } else {
+	    	        SayNumber(${rubl:1:1});
+	    	        Playback(ivr/tisyach);
+	    	    }
+	        }
+	        if (!("${rubl:2:1}"=="0")) {
+	    	    Playback(ivr/${rubl:2:1}00);
+	        }
+	        if ("${rubl:3:1}"=="0") {
+	    	    if ("${rubl:4:1}"=="1") {
+	                SayNumber(${rubl:4:1});
+	                Playback(ivr/rubl);
+	            } else if ("${rubl:4:1}"=="2" || "${rubl:4:1}"=="3" || "${rubl:4:1}"=="4") {
+	                SayNumber(${rubl:4:1});
+	        	Playback(ivr/rublya);
+	            } else if ("${rubl:4:1}"=="0") {
+	                Playback(ivr/rublei);
+	    	    } else {
+	                SayNumber(${rubl:4:1});
+	                Playback(ivr/rublei);
+	    	    }
+	        } else if ("${rubl:3:1}"=="1") {
+	            SayNumber(${rubl:3:2});
+	            Playback(ivr/rublei);
+	        } else {
+	    	    SayNumber(${rubl:3:1}0);
+	    	    if ("${rubl:4:1}"=="1") {
+	        	SayNumber(${rubl:4:1});
+	        	Playback(ivr/rubl);
+	    	    } else if ("${rubl:4:1}"=="0") {
+	        	Playback(ivr/rublei);
+	    	    } else if ("${rubl:4:1}"=="2" || "${rubl:4:1}"=="3" || "${rubl:4:1}"=="4") {
+	        	SayNumber(${rubl:4:1});
+	        	Playback(ivr/rublya);
+	    	    } else {
+	        	SayNumber(${rubl:4:1});
+	        	Playback(ivr/rublei);
+	    	    }
+	        }
+	    break;
+	    case 6:
+	    	Playback(ivr/${rubl:0:1}00);
+	    	if ("${rubl:1:1}"=="0") {
+	    	    if ("${rubl:2:1}"=="1") {
+	        	SayNumber(${rubl:2:1});
+	        	Playback(ivr/tisyacha);
+	    	    } else if ("${rubl:2:1}"=="2" || "${rubl:2:1}"=="3" || "${rubl:2:1}"=="4") {
+	        	SayNumber(${rubl:2:1});
+	        	Playback(ivr/tisyachi);
+	    	    } else if ("${rubl:2:1}"=="0") {
+	        	Playback(ivr/tisyach);
+	    	    } else {
+	        	SayNumber(${rubl:2:1});
+	        	Playback(ivr/tisyach);
+	    	    }
+	    	} else if ("${rubl:1:1}"=="1") {
+	    	    SayNumber(${rubl:1:2});
+	    	    Playback(ivr/tisyach);
+	    	} else {
+	    	    SayNumber(${rubl:1:1}0);
+	    	    if ("${rubl:2:1}"=="1") {
+	            	SayNumber(${rubl:2:1});
+	            	Playback(ivr/tisyacha);
+	    	    } else if ("${rubl:2:1}"=="2" || "${rubl:2:1}"=="3" || "${rubl:2:1}"=="4") {
+	            	SayNumber(${rubl:2:1});
+	            	Playback(ivr/tisyachi);
+	    	    } else if ("${rubl:2:1}"=="0") {
+	    		Playback(ivr/tisyach);
+	            } else {
+	        	SayNumber(${rubl:2:1});
+	        	Playback(ivr/tisyach);
+	                
+	    	    }
+	        }
+	        if (!("${rubl:3:1}"=="0")) {
+	    	    Playback(ivr/${rubl:3:1}00);
+	    	}
+	    	if ("${rubl:4:1}"=="0") {
+	    	    if ("${rubl:5:1}"=="1") {
+	        	SayNumber(${rubl:5:1});
+	        	Playback(ivr/rubl);
+	    	    } else if ("${rubl:5:1}"=="2" || "${rubl:5:1}"=="3" || "${rubl:5:1}"=="4") {
+	        	SayNumber(${rubl:5:1});
+	        	Playback(ivr/rublya);
+	    	    } else if ("${rubl:5:1}"=="0") {
+	        	Playback(ivr/rublei);
+	    	    } else {
+	        	SayNumber(${rubl:5:1});
+	        	Playback(ivr/rublei);
+	    	    }
+	    	} else if ("${rubl:4:1}"=="1") {
+	    	    SayNumber(${rubl:4:2});
+	    	    Playback(ivr/rublei);
+	    	} else {
+	    	    SayNumber(${rubl:4:1}0);
+	    	    if ("${rubl:5:1}"=="1") {
+	            	SayNumber(${rubl:5:1});
+	            	Playback(ivr/rubl);
+	    	    } else if ("${rubl:5:1}"=="2" || "${rubl:5:1}"=="3" || "${rubl:5:1}"=="4") {
+	            	SayNumber(${rubl:5:1});
+	            	Playback(ivr/rublya);
+	    	    } else if ("${rubl:5:1}"=="0") {
+	            	Playback(ivr/rublei);
+	            } else {
+	                SayNumber(${rubl:5:1});
+	                Playback(ivr/rublei);
+	    	    }
+	        }
+	    case 7:
+	        if ("${rubl:0:1}"=="1") {
+	    	    SayNumber(${rubl:0:1});    
+	            Playback(ivr/million);
+	        } else if ("${rubl:0:1}"=="2" || "${rubl:0:1}"=="3" || "${rubl:0:1}"=="4") {
+	    	    SayNumber(${rubl:0:1});    
+	            Playback(ivr/milliona);
+	        } else {
+	    	    SayNumber(${rubl:0:1});    
+	    	    Playback(ivr/millionov);
+	        }
+	        if (!("${rubl:1:1}"=="0")) {
+	    	    Playback(ivr/${rubl:1:1}00);
+	    	}
+	    	if ("${rubl:2:1}"=="0") {
+	    	    if ("${rubl:3:1}"=="1") {
+	        	SayNumber(${rubl:3:1});
+	        	Playback(ivr/tisyacha);
+	    	    } else if ("${rubl:3:1}"=="2" || "${rubl:3:1}"=="3" || "${rubl:3:1}"=="4") {
+	        	SayNumber(${rubl:3:1});
+	        	Playback(ivr/tisyachi);
+	    	    } else if ("${rubl:3:1}"=="0") {
+	        	Playback(ivr/tisyach);
+	    	    } else {
+	        	SayNumber(${rubl:3:1});
+	        	Playback(ivr/tisyach);
+	    	    }
+	    	} else if ("${rubl:2:1}"=="1") {
+	    	    SayNumber(${rubl:2:2});
+	    	    Playback(ivr/tisyach);
+	    	} else {
+	    	    SayNumber(${rubl:2:1}0);
+	    	    if ("${rubl:3:1}"=="1") {
+	            	SayNumber(${rubl:3:1});
+	            	Playback(ivr/tisyacha);
+	    	    } else if ("${rubl:3:1}"=="2" || "${rubl:3:1}"=="3" || "${rubl:3:1}"=="4") {
+	            	SayNumber(${rubl:3:1});
+	            	Playback(ivr/tisyachi);
+	    	    } else if ("${rubl:3:1}"=="0") {
+	    		Playback(ivr/tisyach);
+	            } else {
+	        	SayNumber(${rubl:3:1});
+	        	Playback(ivr/tisyach);
+	    	    }
+	        }
+	        if (!("${rubl:4:1}"=="0")) {
+	    	    Playback(ivr/${rubl:4:1}00);
+	    	}
+	    	if ("${rubl:5:1}"=="0") {
+	    	    if ("${rubl:6:1}"=="1") {
+	        	SayNumber(${rubl:6:1});
+	        	Playback(ivr/rubl);
+	    	    } else if ("${rubl:6:1}"=="2" || "${rubl:6:1}"=="3" || "${rubl:6:1}"=="4") {
+	        	SayNumber(${rubl:6:1});
+	        	Playback(ivr/rublya);
+	    	    } else if ("${rubl:6:1}"=="0") {
+	        	Playback(ivr/rublei);
+	    	    } else {
+	        	SayNumber(${rubl:6:1});
+	        	Playback(ivr/rublei);
+	    	    }
+	    	} else if ("${rubl:5:1}"=="1") {
+	    	    SayNumber(${rubl:5:2});
+	    	    Playback(ivr/rublei);
+	    	} else {
+	    	    SayNumber(${rubl:5:1}0);
+	    	    if ("${rubl:6:1}"=="1") {
+	            	SayNumber(${rubl:6:1});
+	            	Playback(ivr/rubl);
+	    	    } else if ("${rubl:6:1}"=="2" || "${rubl:6:1}"=="3" || "${rubl:6:1}"=="4") {
+	            	SayNumber(${rubl:6:1});
+	            	Playback(ivr/rublya);
+	    	    } else if ("${rubl:6:1}"=="0") {
+	            	Playback(ivr/rublei);
+	            } else {
+	                SayNumber(${rubl:6:1});
+	                Playback(ivr/rublei);
+	    	    }
+	        }
+	    default:
+		break;
+	}
+	//произносим копейки
+	if ("${kopeek:0:1}"=="0") {
+	    if ("${kopeek:1:1}"=="1") {
+		SayNumber(${kopeek:1:1});
+		Playback(ivr/kopek);
+	    } else if ("${kopeek:1:1}"=="0") {
+		SayNumber(0);
+		Playback(ivr/kopecks);
+	    } else if ("${kopeek:1:1}"=="2" || "${kopeek:1:1}"=="3" || "${kopeek:1:1}"=="4") {
+		SayNumber(${kopeek:1:1});
+		Playback(ivr/kopek_i);
+	    } else {
+		SayNumber(${kopeek:1:1});
+		Playback(ivr/kopecks);
+	    }
+	} else if ("${kopeek:0:1}"=="1") {
+	    SayNumber(${kopeek});
+	    Playback(ivr/kopecks);
+	} else {
+	    SayNumber(${kopeek:0:1}0);
+	    if ("${kopeek:1:1}"=="1") {
+		SayNumber(ivr/${kopeek:1:1});
+	        Playback(ivr/kopek);
+	    } else if ("${kopeek:1:1}"=="0") {
+	        Playback(ivr/kopecks);
+	    } else if ("${kopeek:1:1}"=="2" || "${kopeek:1:1}"=="3" || "${kopeek:1:1}"=="4") {
+	        SayNumber(${kopeek:1:1});
+	        Playback(ivr/kopek_i);
+	    } else {
+	        SayNumber(${kopeek:1:1});
+	        Playback(ivr/kopecks);
+	    }
+	}
+	Hangup;
+    }
+}
+context macro-take_call {
+    s =>	System(/var/www/contact/on_call -n ${ARG2} -a ${ARG3} -t 1 -i ${ARG1});
+};
+
+context macro-take_internal {
+    s =>	System(/var/www/contact/on_call -n ${ARG3} -a ${ARG2} -t 2 -i ${ARG1});
+};

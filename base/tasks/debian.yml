@@ -1,0 +1,16 @@
+- name: Install software
+  become: yes
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - mc
+    - telnet
+    - mlocate
+    - tcpdump
+    - ntpdate
+    - python-pip
+    - less
+    - curl
+    - screen
+    - git

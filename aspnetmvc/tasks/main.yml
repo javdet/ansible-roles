@@ -1,0 +1,4 @@
+- name: Install Microsoft ASP .NET MVC 3
+  win_chocolatey: 
+    name: aspnetmvc.install 
+    version: "{{ aspnetmvc_version }}"
